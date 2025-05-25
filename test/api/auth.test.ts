@@ -37,10 +37,11 @@ describe('Auth API', () => {
         .send(testUser)
 
       expect(response.status).toBe(200)
-      expect(response.body).toHaveProperty('token')
       expect(response.body).toHaveProperty('user')
+      expect(response.body).toHaveProperty('csrfToken')
       expect(response.body.user).toHaveProperty('email', testUser.email)
       expect(response.body.user).not.toHaveProperty('password')
+      expect(response.headers['set-cookie']).toBeDefined()
     })
 
     it('should return 401 with invalid password', async () => {
@@ -71,7 +72,7 @@ describe('Auth API', () => {
       const newUser = {
         email: 'new-register@example.com',
         password: 'register123',
-        role: 'USER'
+        name: 'New User'
       }
 
       const response = await request(BASE_URL)
@@ -79,9 +80,9 @@ describe('Auth API', () => {
         .send(newUser)
 
       expect(response.status).toBe(200)
-      expect(response.body).toHaveProperty('token')
       expect(response.body).toHaveProperty('user')
       expect(response.body.user).toHaveProperty('email', newUser.email)
+      expect(response.body.user).toHaveProperty('name', newUser.name)
       expect(response.body.user).not.toHaveProperty('password')
     })
 
@@ -107,6 +108,7 @@ describe('Auth API', () => {
 
   describe('GET /api/auth/me', () => {
     let authToken: string
+    let csrfToken: string
 
     beforeAll(async () => {
       // Login to get token
@@ -114,13 +116,27 @@ describe('Auth API', () => {
         .post('/api/auth/login')
         .send(testUser)
 
-      authToken = loginResponse.body.token
+      authToken = loginResponse.headers['set-cookie'][0].split(';')[0].split('=')[1]
+      csrfToken = loginResponse.body.csrfToken
     })
 
     it('should return current user with valid token', async () => {
       const response = await request(BASE_URL)
         .get('/api/auth/me')
+        .set('Cookie', [`auth_token=${authToken}`])
+        .set('x-csrf-token', csrfToken)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toHaveProperty('user')
+      expect(response.body.user).toHaveProperty('email', testUser.email)
+      expect(response.body.user).not.toHaveProperty('password')
+    })
+
+    it('should return current user with Authorization header', async () => {
+      const response = await request(BASE_URL)
+        .get('/api/auth/me')
         .set('Authorization', `Bearer ${authToken}`)
+        .set('x-csrf-token', csrfToken)
 
       expect(response.status).toBe(200)
       expect(response.body).toHaveProperty('user')
@@ -132,6 +148,7 @@ describe('Auth API', () => {
       const response = await request(BASE_URL)
         .get('/api/auth/me')
         .set('Authorization', 'Bearer invalid-token')
+        .set('x-csrf-token', csrfToken)
 
       expect(response.status).toBe(401)
     })

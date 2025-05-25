@@ -10,8 +10,15 @@ export default defineEventHandler(async (event) => {
     return
   }
 
-  // Get JWT token from cookie
-  const token = getCookie(event, 'auth_token')
+  // Get JWT token from cookie or Authorization header
+  let token = getCookie(event, 'auth_token')
+  if (!token) {
+    const authHeader = getRequestHeader(event, 'authorization')
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.slice(7)
+    }
+  }
+
   if (!token) {
     throw createError({
       statusCode: 401,

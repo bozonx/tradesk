@@ -15,6 +15,9 @@ beforeAll(async () => {
     prisma.strategy.deleteMany(),
     prisma.session.deleteMany(),
     prisma.user.deleteMany(),
+    prisma.asset.deleteMany(),
+    prisma.externalEntity.deleteMany(),
+    prisma.group.deleteMany(),
   ])
 
   // Create test user
@@ -23,6 +26,17 @@ beforeAll(async () => {
       email: 'test@example.com',
       password: '$2a$10$K7L1OJ45/4Y2nIvhRVpCe.FSmhDdWoXehVzJptJ/op0lSsvqNu9Uu', // 'test123'
       name: 'Test User',
+      role: 'USER',
+    },
+  })
+
+  // Create admin user
+  await prisma.user.create({
+    data: {
+      email: 'admin@example.com',
+      password: '$2a$10$K7L1OJ45/4Y2nIvhRVpCe.FSmhDdWoXehVzJptJ/op0lSsvqNu9Uu', // 'test123'
+      name: 'Admin User',
+      role: 'ADMIN',
     },
   })
 })
