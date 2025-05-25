@@ -1,4 +1,4 @@
-export default defineNuxtConfig({
+export default {
   devtools: { enabled: true },
   nitro: {
     routeRules: {
@@ -18,4 +18,4 @@ export default defineNuxtConfig({
     jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
     csrfSecret: process.env.CSRF_SECRET || 'your-csrf-secret',
   },
-}) 
+}
