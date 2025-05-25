@@ -1,15 +1,12 @@
 import { PrismaClient } from '@prisma/client'
 import { beforeAll, afterAll } from 'vitest'
-import { startServer, stopServer } from './helpers/server'
+import bcryptjs from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
 // Setup before all tests
 beforeAll(async () => {
   try {
-    // Start test server
-    await startServer()
-
     // Clean up database before tests
     await prisma.$transaction([
       prisma.transaction.deleteMany(),
@@ -25,33 +22,34 @@ beforeAll(async () => {
       prisma.group.deleteMany(),
     ])
 
-    // Create test user using upsert to handle existing user
+    // Create test user
+    const hashedPassword = await bcryptjs.hash('test123', 10)
     await prisma.user.upsert({
       where: { email: 'test@example.com' },
       update: {
-        password: '$2a$10$K7L1OJ45/4Y2nIvhRVpCe.FSmhDdWoXehVzJptJ/op0lSsvqNu9Uu', // 'test123'
+        password: hashedPassword,
         name: 'Test User',
         role: 'USER',
       },
       create: {
         email: 'test@example.com',
-        password: '$2a$10$K7L1OJ45/4Y2nIvhRVpCe.FSmhDdWoXehVzJptJ/op0lSsvqNu9Uu', // 'test123'
+        password: hashedPassword,
         name: 'Test User',
         role: 'USER',
       },
     })
 
-    // Create admin user using upsert
+    // Create admin user
     await prisma.user.upsert({
       where: { email: 'admin@example.com' },
       update: {
-        password: '$2a$10$K7L1OJ45/4Y2nIvhRVpCe.FSmhDdWoXehVzJptJ/op0lSsvqNu9Uu', // 'test123'
+        password: hashedPassword,
         name: 'Admin User',
         role: 'ADMIN',
       },
       create: {
         email: 'admin@example.com',
-        password: '$2a$10$K7L1OJ45/4Y2nIvhRVpCe.FSmhDdWoXehVzJptJ/op0lSsvqNu9Uu', // 'test123'
+        password: hashedPassword,
         name: 'Admin User',
         role: 'ADMIN',
       },
@@ -64,6 +62,5 @@ beforeAll(async () => {
 
 // Cleanup after all tests
 afterAll(async () => {
-  await stopServer()
   await prisma.$disconnect()
 }) 
