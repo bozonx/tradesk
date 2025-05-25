@@ -9,7 +9,8 @@ const BASE_URL = 'http://localhost:3000'
 describe('Auth API', () => {
   const testUser = {
     email: 'auth-test@example.com',
-    password: 'test123'
+    password: 'test123',
+    role: 'USER'
   }
 
   beforeAll(async () => {
@@ -24,7 +25,7 @@ describe('Auth API', () => {
         data: {
           email: testUser.email,
           password: hashedPassword,
-          role: 'USER'
+          role: testUser.role
         }
       })
     }
@@ -40,6 +41,7 @@ describe('Auth API', () => {
       expect(response.body).toHaveProperty('user')
       expect(response.body).toHaveProperty('csrfToken')
       expect(response.body.user).toHaveProperty('email', testUser.email)
+      expect(response.body.user).toHaveProperty('role', testUser.role)
       expect(response.body.user).not.toHaveProperty('password')
       expect(response.headers['set-cookie']).toBeDefined()
     })
@@ -72,7 +74,8 @@ describe('Auth API', () => {
       const newUser = {
         email: 'new-register@example.com',
         password: 'register123',
-        name: 'New User'
+        name: 'New User',
+        role: 'USER'
       }
 
       const response = await request(BASE_URL)
@@ -83,6 +86,7 @@ describe('Auth API', () => {
       expect(response.body).toHaveProperty('user')
       expect(response.body.user).toHaveProperty('email', newUser.email)
       expect(response.body.user).toHaveProperty('name', newUser.name)
+      expect(response.body.user).toHaveProperty('role', newUser.role)
       expect(response.body.user).not.toHaveProperty('password')
     })
 
@@ -99,7 +103,8 @@ describe('Auth API', () => {
         .post('/api/auth/register')
         .send({
           email: 'invalid-email',
-          password: '123' // too short
+          password: '123', // too short
+          role: 'INVALID_ROLE' // invalid role
         })
 
       expect(response.status).toBe(400)
@@ -129,6 +134,7 @@ describe('Auth API', () => {
       expect(response.status).toBe(200)
       expect(response.body).toHaveProperty('user')
       expect(response.body.user).toHaveProperty('email', testUser.email)
+      expect(response.body.user).toHaveProperty('role', testUser.role)
       expect(response.body.user).not.toHaveProperty('password')
     })
 
@@ -141,6 +147,7 @@ describe('Auth API', () => {
       expect(response.status).toBe(200)
       expect(response.body).toHaveProperty('user')
       expect(response.body.user).toHaveProperty('email', testUser.email)
+      expect(response.body.user).toHaveProperty('role', testUser.role)
       expect(response.body.user).not.toHaveProperty('password')
     })
 

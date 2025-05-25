@@ -38,15 +38,14 @@ export default defineEventHandler(async (event) => {
       const group = await prisma.group.findFirst({
         where: {
           id: validatedData.groupId,
-          userId,
-          deletedAt: null,
+          type: 'PORTFOLIO',
         },
       })
 
       if (!group) {
         throw createError({
           statusCode: 400,
-          message: 'Invalid group ID',
+          message: 'Invalid group or group type must be PORTFOLIO',
         })
       }
     }

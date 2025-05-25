@@ -46,7 +46,7 @@ export default defineEventHandler(async (event) => {
       if (!group) {
         throw createError({
           statusCode: 400,
-          message: 'Invalid group',
+          message: 'Invalid group or group type must be POSITION',
         })
       }
     }

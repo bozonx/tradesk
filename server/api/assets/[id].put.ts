@@ -3,9 +3,9 @@ import { z } from 'zod'
 import prisma from '../../utils/prisma'
 
 const updateAssetSchema = z.object({
-  symbol: z.string().min(1).optional(),
+  ticker: z.string().min(1).optional(),
   name: z.string().min(1).optional(),
-  type: z.string().min(1).optional(),
+  type: z.enum(['CRYP', 'FIAT', 'STOK', 'BOND', 'ETF']).optional(),
   descr: z.string().optional(),
   metadata: z.string().optional(),
 })

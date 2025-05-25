@@ -9,12 +9,13 @@ const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
   name: z.string().min(1).optional(),
+  role: z.enum(['USER', 'ADMIN']).default('USER'),
 })
 
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event)
-    const { email, password, name } = registerSchema.parse(body)
+    const { email, password, name, role } = registerSchema.parse(body)
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -37,6 +38,7 @@ export default defineEventHandler(async (event) => {
         email,
         password: hashedPassword,
         name,
+        role,
       },
     })
 
