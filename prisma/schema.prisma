@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
@@ -12,7 +13,7 @@ model User {
   email     String    @unique
   password  String
   name      String?
-  settings  Json?     @default("{}")
+  settings  String?   @default("{}")
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
@@ -48,7 +49,7 @@ model Portfolio {
   groupId   Int?      @map("group_id")
   name      String
   descr     String?
-  state     Json?
+  state     String?
   user      User      @relation(fields: [userId], references: [id])
   group     Group?    @relation(fields: [groupId], references: [id])
   positions Position[]
@@ -116,7 +117,7 @@ model Strategy {
   groupId   Int?      @map("group_id")
   name      String
   descr     String?
-  state     Json?
+  state     String?
   user      User      @relation(fields: [userId], references: [id])
   group     Group?    @relation(fields: [groupId], references: [id])
   positions Position[]
@@ -164,7 +165,7 @@ model TradeOrder {
   action          String    // ENUM('BUY', 'SELL')
   status          String    // ENUM('OPND', 'FILL', 'CANC', 'EXPR')
   note            String?
-  data            Json?
+  data            String?
   user            User      @relation(fields: [userId], references: [id])
   position        Position? @relation(fields: [positionId], references: [id])
   positionId      Int?      @map("position_id")
@@ -185,7 +186,7 @@ model Wallet {
   externalEntityId Int?     @map("external_entity_id")
   name            String
   descr           String?
-  state           Json?
+  state           String?
   user            User      @relation(fields: [userId], references: [id])
   externalEntity  ExternalEntity? @relation(fields: [externalEntityId], references: [id])
   fromTransactions Transaction[] @relation("FromWallet")
