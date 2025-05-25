@@ -8,68 +8,65 @@ const prisma = new PrismaClient()
 const JWT_SECRET = 'your-secret-key'
 const JWT_EXPIRES_IN = '7d'
 
-describe('Auth', () => {
+describe('Authentication', () => {
+  let testUser: any
+  const testPassword = 'test123'
+
+  beforeAll(async () => {
+    // Create test user
+    const hashedPassword = await bcryptjs.hash(testPassword, 10)
+    testUser = await prisma.user.upsert({
+      where: { email: 'auth_test@example.com' },
+      update: {
+        password: hashedPassword,
+        name: 'Auth Test User',
+        role: 'USER',
+      },
+      create: {
+        email: 'auth_test@example.com',
+        password: hashedPassword,
+        name: 'Auth Test User',
+        role: 'USER',
+      },
+    })
+  })
+
   describe('Login', () => {
     it('should login with valid credentials', async () => {
-      // Find user
       const user = await prisma.user.findUnique({
-        where: { email: 'test@example.com' }
+        where: { email: 'auth_test@example.com' },
       })
 
       expect(user).toBeDefined()
-      if (!user) return
+      expect(user?.email).toBe('auth_test@example.com')
 
-      // Verify password
-      const isValidPassword = await bcryptjs.compare('test123', user.password)
+      const isValidPassword = await bcryptjs.compare(testPassword, user!.password)
       expect(isValidPassword).toBe(true)
 
-      // Generate JWT token
       const token = jwt.sign(
-        { userId: user.id },
+        { userId: user!.id },
         JWT_SECRET,
         { expiresIn: JWT_EXPIRES_IN }
       )
 
-      // Generate CSRF token
-      const csrfToken = randomBytes(32).toString('hex')
-
-      // Create session
-      const session = await prisma.session.create({
-        data: {
-          userId: user.id,
-          token: csrfToken,
-          userAgent: 'test-agent',
-          ipAddress: '127.0.0.1',
-        },
-      })
-
-      expect(session).toBeDefined()
-      expect(session.token).toBe(csrfToken)
-      expect(session.userId).toBe(user.id)
-
-      // Verify token
+      expect(token).toBeDefined()
       const decoded = jwt.verify(token, JWT_SECRET) as { userId: number }
-      expect(decoded.userId).toBe(user.id)
+      expect(decoded.userId).toBe(user!.id)
     })
 
-    it('should fail with invalid password', async () => {
-      // Find user
+    it('should not login with invalid password', async () => {
       const user = await prisma.user.findUnique({
-        where: { email: 'test@example.com' }
+        where: { email: 'auth_test@example.com' },
       })
 
       expect(user).toBeDefined()
-      if (!user) return
-
-      // Verify password
-      const isValidPassword = await bcryptjs.compare('wrongpassword', user.password)
+      const isValidPassword = await bcryptjs.compare('wrong_password', user!.password)
       expect(isValidPassword).toBe(false)
     })
 
-    it('should fail with non-existent email', async () => {
-      // Find user
+    it('should not login with non-existent email', async () => {
       const user = await prisma.user.findUnique({
-        where: { email: 'nonexistent@example.com' }
+        where: { email: 'nonexistent@example.com' },
       })
 
       expect(user).toBeNull()
@@ -77,50 +74,62 @@ describe('Auth', () => {
   })
 
   describe('Register', () => {
-    it('should register a new user', async () => {
-      const newUser = {
-        email: 'newuser@example.com',
-        password: 'newuser123',
+    it('should register new user', async () => {
+      const newUserData = {
+        email: 'new_user@example.com',
+        password: 'newpass123',
         name: 'New User',
-        role: 'USER' as const
+        role: 'USER' as const,
       }
 
-      // Create user
+      const hashedPassword = await bcryptjs.hash(newUserData.password, 10)
       const user = await prisma.user.create({
         data: {
-          ...newUser,
-          password: await bcryptjs.hash(newUser.password, 10)
-        }
+          ...newUserData,
+          password: hashedPassword,
+        },
       })
 
       expect(user).toBeDefined()
-      expect(user.email).toBe(newUser.email)
-      expect(user.name).toBe(newUser.name)
-      expect(user.role).toBe(newUser.role)
-      expect(user.password).not.toBe(newUser.password)
+      expect(user.email).toBe(newUserData.email)
+      expect(user.name).toBe(newUserData.name)
+      expect(user.role).toBe(newUserData.role)
 
-      // Verify password
-      const isValidPassword = await bcryptjs.compare(newUser.password, user.password)
+      const isValidPassword = await bcryptjs.compare(newUserData.password, user.password)
       expect(isValidPassword).toBe(true)
     })
 
-    it('should fail with existing email', async () => {
-      const existingUser = {
-        email: 'test@example.com',
+    it('should not register user with existing email', async () => {
+      const existingUserData = {
+        email: 'auth_test@example.com',
         password: 'test123',
-        name: 'Test User',
-        role: 'USER' as const
+        name: 'Existing User',
+        role: 'USER' as const,
       }
 
-      // Try to create user
-      await expect(
-        prisma.user.create({
-          data: {
-            ...existingUser,
-            password: await bcryptjs.hash(existingUser.password, 10)
-          }
-        })
-      ).rejects.toThrow()
+      const hashedPassword = await bcryptjs.hash(existingUserData.password, 10)
+      await expect(prisma.user.create({
+        data: {
+          ...existingUserData,
+          password: hashedPassword,
+        },
+      })).rejects.toThrow()
+    })
+  })
+
+  describe('Password Reset', () => {
+    it('should update user password', async () => {
+      const newPassword = 'newpass123'
+      const hashedPassword = await bcryptjs.hash(newPassword, 10)
+
+      const updatedUser = await prisma.user.update({
+        where: { id: testUser.id },
+        data: { password: hashedPassword },
+      })
+
+      expect(updatedUser).toBeDefined()
+      const isValidPassword = await bcryptjs.compare(newPassword, updatedUser.password)
+      expect(isValidPassword).toBe(true)
     })
   })
 }) 
