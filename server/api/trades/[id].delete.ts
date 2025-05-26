@@ -1,4 +1,4 @@
-import { TransactionService } from '~/server/services/transaction.service'
+import { TradeService } from '~/server/services/trade.service'
 import type { H3Error } from '~/server/types/error'
 
 export default defineEventHandler(async (event) => {
@@ -7,25 +7,27 @@ export default defineEventHandler(async (event) => {
     if (isNaN(id)) {
       throw createError({
         statusCode: 400,
-        message: 'Неверный ID транзакции'
+        message: 'Неверный ID ордера'
       })
     }
 
-    const transactionService = new TransactionService()
-    const transaction = await transactionService.getTransactionById(id)
-    if (!transaction) {
+    const tradeService = new TradeService()
+    const tradeOrder = await tradeService.deleteTradeOrder(id)
+    
+    if (!tradeOrder) {
       throw createError({
         statusCode: 404,
-        message: 'Транзакция не найдена'
+        message: 'Ордер не найден'
       })
     }
-    return transaction
+
+    return { message: 'Ордер успешно удален' }
   } catch (error) {
     const err = error as H3Error
     if (err.statusCode) throw error
     throw createError({
       statusCode: 500,
-      message: 'Ошибка при получении транзакции'
+      message: 'Ошибка при удалении ордера'
     })
   }
 }) 

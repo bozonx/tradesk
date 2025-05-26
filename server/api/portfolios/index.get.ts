@@ -1,55 +1,27 @@
-import { defineEventHandler, getQuery } from 'h3'
-import { z } from 'zod'
-import prisma from '../../utils/prisma'
-import { getPaginationParams, createPaginationResponse, createWhereClause, createOrderByClause } from '../../utils/pagination'
-import type { QueryParams } from '../../types/api'
-
-const querySchema = z.object({
-  page: z.string().optional(),
-  limit: z.string().optional(),
-  sortBy: z.string().optional(),
-  sortOrder: z.enum(['asc', 'desc']).optional(),
-  search: z.string().optional(),
-  filter: z.record(z.any()).optional(),
-})
+import { PortfolioService } from '~/server/services/portfolio.service'
+import type { H3Error } from '~/server/types/error'
 
 export default defineEventHandler(async (event) => {
   try {
-    const userId = event.context.user.id
-    const query = await getQuery(event)
-    const validatedQuery = querySchema.parse(query)
+    const query = getQuery(event)
+    const userId = Number(query.userId)
 
-    const { skip, take, page, limit } = getPaginationParams(validatedQuery as QueryParams)
-    const where = createWhereClause(validatedQuery as QueryParams)
-    const orderBy = createOrderByClause(validatedQuery as QueryParams)
-
-    // Add user filter
-    where.userId = userId
-
-    const [portfolios, total] = await Promise.all([
-      prisma.portfolio.findMany({
-        where,
-        orderBy,
-        skip,
-        take,
-        include: {
-          group: true,
-          positions: true,
-        },
-      }),
-      prisma.portfolio.count({ where }),
-    ])
-
-    return createPaginationResponse(portfolios, total, page, limit)
-  } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (isNaN(userId)) {
       throw createError({
         statusCode: 400,
-        message: 'Invalid query parameters',
-        data: error.errors,
+        message: 'Неверный ID пользователя'
       })
     }
 
-    throw error
+    const portfolioService = new PortfolioService()
+    const portfolios = await portfolioService.getUserPortfolios(userId)
+    return portfolios
+  } catch (error) {
+    const err = error as H3Error
+    if (err.statusCode) throw error
+    throw createError({
+      statusCode: 500,
+      message: 'Ошибка при получении портфолио'
+    })
   }
 }) 

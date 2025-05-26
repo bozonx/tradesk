@@ -1,35 +1,33 @@
-import { defineEventHandler, createError, getRouterParam } from 'h3'
-import prisma from '../../utils/prisma'
+import { PortfolioService } from '~/server/services/portfolio.service'
+import type { H3Error } from '~/server/types/error'
 
 export default defineEventHandler(async (event) => {
-  const userId = event.context.user.id
-  const id = parseInt(getRouterParam(event, 'id') || '0')
+  try {
+    const id = Number(event.context.params?.id)
+    if (isNaN(id)) {
+      throw createError({
+        statusCode: 400,
+        message: 'Неверный ID портфолио'
+      })
+    }
 
-  // Check if portfolio exists and belongs to user
-  const existingPortfolio = await prisma.portfolio.findFirst({
-    where: {
-      id,
-      userId,
-      deletedAt: null,
-    },
-  })
+    const portfolioService = new PortfolioService()
+    const portfolio = await portfolioService.deletePortfolio(id)
+    
+    if (!portfolio) {
+      throw createError({
+        statusCode: 404,
+        message: 'Портфолио не найдено'
+      })
+    }
 
-  if (!existingPortfolio) {
+    return { message: 'Портфолио успешно удалено' }
+  } catch (error) {
+    const err = error as H3Error
+    if (err.statusCode) throw error
     throw createError({
-      statusCode: 404,
-      message: 'Portfolio not found',
+      statusCode: 500,
+      message: 'Ошибка при удалении портфолио'
     })
-  }
-
-  // Soft delete the portfolio
-  await prisma.portfolio.update({
-    where: { id },
-    data: {
-      deletedAt: new Date(),
-    },
-  })
-
-  return {
-    message: 'Portfolio deleted successfully',
   }
 }) 

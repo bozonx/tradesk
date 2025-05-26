@@ -1,39 +1,28 @@
-import { defineEventHandler, readBody, createError } from 'h3'
-import { z } from 'zod'
-import prisma from '../../utils/prisma'
-
-const createGroupSchema = z.object({
-  type: z.enum(['PORTFOLIO', 'POSITION', 'STRATEGY']),
-  name: z.string().min(1),
-  descr: z.string().optional(),
-})
+import { GroupService } from '~/server/services/group.service'
+import { createGroupSchema } from '~/server/schemas/group.schema'
+import type { H3Error, ZodError } from '~/server/types/error'
 
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event)
-    const data = createGroupSchema.parse(body)
+    const validatedData = createGroupSchema.parse(body)
 
-    const group = await prisma.group.create({
-      data,
-      include: {
-        portfolios: true,
-        positions: true,
-        strategies: true,
-      },
-    })
-
-    return {
-      data: group,
-      message: 'Group created successfully',
-    }
+    const groupService = new GroupService()
+    const group = await groupService.createGroup(validatedData)
+    
+    return group
   } catch (error) {
-    if (error instanceof z.ZodError) {
+    const err = error as H3Error | ZodError
+    if (err.name === 'ZodError') {
       throw createError({
         statusCode: 400,
-        message: 'Invalid input',
-        data: error.errors,
+        message: 'Неверные данные группы',
+        data: (err as ZodError).errors
       })
     }
-    throw error
+    throw createError({
+      statusCode: 500,
+      message: 'Ошибка при создании группы'
+    })
   }
 }) 

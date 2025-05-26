@@ -1,4 +1,4 @@
-import { GroupService } from '~/server/services/group.service'
+import { NoteService } from '~/server/services/note.service'
 import type { H3Error } from '~/server/types/error'
 
 export default defineEventHandler(async (event) => {
@@ -13,15 +13,15 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    const groupService = new GroupService()
-    const groups = await groupService.getUserGroups(userId)
-    return groups
+    const noteService = new NoteService()
+    const notes = await noteService.getUserNotes(userId)
+    return notes
   } catch (error) {
     const err = error as H3Error
     if (err.statusCode) throw error
     throw createError({
       statusCode: 500,
-      message: 'Ошибка при получении групп'
+      message: 'Ошибка при получении заметок'
     })
   }
 }) 

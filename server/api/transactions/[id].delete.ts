@@ -1,35 +1,31 @@
-import { defineEventHandler, createError, getRouterParam } from 'h3'
-import prisma from '../../utils/prisma'
+import { TransactionService } from '~/server/services/transaction.service'
+import type { H3Error } from '~/server/types/error'
 
 export default defineEventHandler(async (event) => {
-  const userId = event.context.user.id
-  const id = parseInt(getRouterParam(event, 'id') || '0')
+  try {
+    const id = Number(event.context.params?.id)
+    if (isNaN(id)) {
+      throw createError({
+        statusCode: 400,
+        message: 'Неверный ID транзакции'
+      })
+    }
 
-  // Check if transaction exists and belongs to user
-  const existingTransaction = await prisma.transaction.findFirst({
-    where: {
-      id,
-      userId,
-      deletedAt: null,
-    },
-  })
-
-  if (!existingTransaction) {
+    const transactionService = new TransactionService()
+    const transaction = await transactionService.deleteTransaction(id)
+    if (!transaction) {
+      throw createError({
+        statusCode: 404,
+        message: 'Транзакция не найдена'
+      })
+    }
+    return transaction
+  } catch (error) {
+    const err = error as H3Error
+    if (err.statusCode) throw error
     throw createError({
-      statusCode: 404,
-      message: 'Transaction not found',
+      statusCode: 500,
+      message: 'Ошибка при удалении транзакции'
     })
-  }
-
-  // Soft delete the transaction
-  await prisma.transaction.update({
-    where: { id },
-    data: {
-      deletedAt: new Date(),
-    },
-  })
-
-  return {
-    message: 'Transaction deleted successfully',
   }
 }) 

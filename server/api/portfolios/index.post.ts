@@ -1,61 +1,28 @@
-import { defineEventHandler, readBody, createError } from 'h3'
-import { z } from 'zod'
-import prisma from '../../utils/prisma'
-
-const createPortfolioSchema = z.object({
-  name: z.string().min(1),
-  descr: z.string().optional(),
-  groupId: z.number().optional(),
-  state: z.string().optional(),
-})
+import { PortfolioService } from '~/server/services/portfolio.service'
+import { createPortfolioSchema } from '~/server/schemas/portfolio.schema'
+import type { H3Error, ZodError } from '~/server/types/error'
 
 export default defineEventHandler(async (event) => {
   try {
-    const userId = event.context.user.id
     const body = await readBody(event)
-    const data = createPortfolioSchema.parse(body)
+    const validatedData = createPortfolioSchema.parse(body)
 
-    // Check if group exists and belongs to user if provided
-    if (data.groupId) {
-      const group = await prisma.group.findFirst({
-        where: {
-          id: data.groupId,
-          type: 'PORTFOLIO',
-        },
-      })
-
-      if (!group) {
-        throw createError({
-          statusCode: 400,
-          message: 'Invalid group',
-        })
-      }
-    }
-
-    const portfolio = await prisma.portfolio.create({
-      data: {
-        ...data,
-        userId,
-      },
-      include: {
-        group: true,
-        positions: true,
-      },
-    })
-
-    return {
-      data: portfolio,
-      message: 'Portfolio created successfully',
-    }
+    const portfolioService = new PortfolioService()
+    const portfolio = await portfolioService.createPortfolio(validatedData)
+    
+    return portfolio
   } catch (error) {
-    if (error instanceof z.ZodError) {
+    const err = error as H3Error | ZodError
+    if (err.name === 'ZodError') {
       throw createError({
         statusCode: 400,
-        message: 'Invalid input',
-        data: error.errors,
+        message: 'Неверные данные портфолио',
+        data: (err as ZodError).errors
       })
     }
-
-    throw error
+    throw createError({
+      statusCode: 500,
+      message: 'Ошибка при создании портфолио'
+    })
   }
 }) 

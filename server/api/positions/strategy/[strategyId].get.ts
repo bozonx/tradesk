@@ -3,18 +3,16 @@ import type { H3Error } from '~/server/types/error'
 
 export default defineEventHandler(async (event) => {
   try {
-    const query = getQuery(event)
-    const portfolioId = Number(query.portfolioId)
-
-    if (isNaN(portfolioId)) {
+    const strategyId = Number(event.context.params?.strategyId)
+    if (isNaN(strategyId)) {
       throw createError({
         statusCode: 400,
-        message: 'Неверный ID портфолио'
+        message: 'Неверный ID стратегии'
       })
     }
 
     const positionService = new PositionService()
-    const positions = await positionService.getPortfolioPositions(portfolioId)
+    const positions = await positionService.getStrategyPositions(strategyId)
     return positions
   } catch (error) {
     const err = error as H3Error

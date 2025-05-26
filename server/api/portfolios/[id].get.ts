@@ -1,35 +1,33 @@
-import { defineEventHandler, createError, getRouterParam } from 'h3'
-import prisma from '../../utils/prisma'
+import { PortfolioService } from '~/server/services/portfolio.service'
+import type { H3Error } from '~/server/types/error'
 
 export default defineEventHandler(async (event) => {
-  const userId = event.context.user.id
-  const id = parseInt(getRouterParam(event, 'id') || '0')
+  try {
+    const id = Number(event.context.params?.id)
+    if (isNaN(id)) {
+      throw createError({
+        statusCode: 400,
+        message: 'Неверный ID портфолио'
+      })
+    }
 
-  const portfolio = await prisma.portfolio.findFirst({
-    where: {
-      id,
-      userId,
-      deletedAt: null,
-    },
-    include: {
-      group: true,
-      positions: {
-        include: {
-          transactions: true,
-          tradeOrders: true,
-        },
-      },
-    },
-  })
+    const portfolioService = new PortfolioService()
+    const portfolio = await portfolioService.getPortfolioById(id)
+    
+    if (!portfolio) {
+      throw createError({
+        statusCode: 404,
+        message: 'Портфолио не найдено'
+      })
+    }
 
-  if (!portfolio) {
+    return portfolio
+  } catch (error) {
+    const err = error as H3Error
+    if (err.statusCode) throw error
     throw createError({
-      statusCode: 404,
-      message: 'Portfolio not found',
+      statusCode: 500,
+      message: 'Ошибка при получении портфолио'
     })
-  }
-
-  return {
-    data: portfolio,
   }
 }) 

@@ -1,42 +1,33 @@
-import { defineEventHandler, createError } from 'h3'
-import prisma from '../../utils/prisma'
+import { GroupService } from '~/server/services/group.service'
+import type { H3Error } from '~/server/types/error'
 
 export default defineEventHandler(async (event) => {
-  if (!event.context.params?.id) {
+  try {
+    const id = Number(event.context.params?.id)
+    if (isNaN(id)) {
+      throw createError({
+        statusCode: 400,
+        message: 'Неверный ID группы'
+      })
+    }
+
+    const groupService = new GroupService()
+    const group = await groupService.getGroupById(id)
+    
+    if (!group) {
+      throw createError({
+        statusCode: 404,
+        message: 'Группа не найдена'
+      })
+    }
+
+    return group
+  } catch (error) {
+    const err = error as H3Error
+    if (err.statusCode) throw error
     throw createError({
-      statusCode: 400,
-      message: 'Group ID is required',
+      statusCode: 500,
+      message: 'Ошибка при получении группы'
     })
-  }
-
-  const id = parseInt(event.context.params.id)
-  if (isNaN(id)) {
-    throw createError({
-      statusCode: 400,
-      message: 'Invalid group ID',
-    })
-  }
-
-  const group = await prisma.group.findFirst({
-    where: {
-      id,
-      deletedAt: null,
-    },
-    include: {
-      portfolios: true,
-      positions: true,
-      strategies: true,
-    },
-  })
-
-  if (!group) {
-    throw createError({
-      statusCode: 404,
-      message: 'Group not found',
-    })
-  }
-
-  return {
-    data: group,
   }
 }) 
