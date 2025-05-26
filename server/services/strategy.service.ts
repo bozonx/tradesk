@@ -5,57 +5,145 @@ import { createStrategySchema, updateStrategySchema } from '../schemas/strategy.
 const prisma = new PrismaClient()
 
 export class StrategyService {
-  // Получить все стратегии
-  async getAllStrategies() {
-    return prisma.strategy.findMany({
-      where: {
-        deletedAt: null
-      },
-      include: {
-        group: true,
-        positions: {
-          where: {
-            deletedAt: null
+  // Получить все стратегии с пагинацией и фильтрацией
+  async getAllStrategies(params: {
+    page?: number
+    limit?: number
+    isArchived?: boolean
+    groupId?: number
+  } = {}) {
+    const { page = 1, limit = 10, isArchived, groupId } = params
+    const skip = (page - 1) * limit
+
+    const where = {
+      deletedAt: null,
+      ...(isArchived !== undefined && { isArchived }),
+      ...(groupId && { groupId })
+    }
+
+    const [strategies, total] = await Promise.all([
+      prisma.strategy.findMany({
+        where,
+        include: {
+          group: true,
+          positions: {
+            where: {
+              deletedAt: null
+            }
           }
+        },
+        skip,
+        take: limit,
+        orderBy: {
+          createdAt: 'desc'
         }
+      }),
+      prisma.strategy.count({ where })
+    ])
+
+    return {
+      data: strategies,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
       }
-    })
+    }
   }
 
-  // Получить все стратегии пользователя
-  async getUserStrategies(userId: number) {
-    return prisma.strategy.findMany({
-      where: {
-        userId,
-        deletedAt: null
-      },
-      include: {
-        group: true,
-        positions: {
-          where: {
-            deletedAt: null
+  // Получить все стратегии пользователя с пагинацией и фильтрацией
+  async getUserStrategies(userId: number, params: {
+    page?: number
+    limit?: number
+    isArchived?: boolean
+    groupId?: number
+  } = {}) {
+    const { page = 1, limit = 10, isArchived, groupId } = params
+    const skip = (page - 1) * limit
+
+    const where = {
+      userId,
+      deletedAt: null,
+      ...(isArchived !== undefined && { isArchived }),
+      ...(groupId && { groupId })
+    }
+
+    const [strategies, total] = await Promise.all([
+      prisma.strategy.findMany({
+        where,
+        include: {
+          group: true,
+          positions: {
+            where: {
+              deletedAt: null
+            }
           }
+        },
+        skip,
+        take: limit,
+        orderBy: {
+          createdAt: 'desc'
         }
+      }),
+      prisma.strategy.count({ where })
+    ])
+
+    return {
+      data: strategies,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
       }
-    })
+    }
   }
 
-  // Получить все стратегии группы
-  async getGroupStrategies(groupId: number) {
-    return prisma.strategy.findMany({
-      where: {
-        groupId,
-        deletedAt: null
-      },
-      include: {
-        group: true,
-        positions: {
-          where: {
-            deletedAt: null
+  // Получить все стратегии группы с пагинацией и фильтрацией
+  async getGroupStrategies(groupId: number, params: {
+    page?: number
+    limit?: number
+    isArchived?: boolean
+  } = {}) {
+    const { page = 1, limit = 10, isArchived } = params
+    const skip = (page - 1) * limit
+
+    const where = {
+      groupId,
+      deletedAt: null,
+      ...(isArchived !== undefined && { isArchived })
+    }
+
+    const [strategies, total] = await Promise.all([
+      prisma.strategy.findMany({
+        where,
+        include: {
+          group: true,
+          positions: {
+            where: {
+              deletedAt: null
+            }
           }
+        },
+        skip,
+        take: limit,
+        orderBy: {
+          createdAt: 'desc'
         }
+      }),
+      prisma.strategy.count({ where })
+    ])
+
+    return {
+      data: strategies,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
       }
-    })
+    }
   }
 
   // Получить стратегию по ID

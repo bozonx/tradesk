@@ -1,21 +1,13 @@
-import { StrategyService } from '~/server/services/strategy.service'
+import { WalletService } from '~/server/services/wallet.service'
 import type { H3Error } from '~/server/types/error'
 
 export default defineEventHandler(async (event) => {
   try {
-    const userId = Number(event.context.params?.userId)
-    if (isNaN(userId)) {
-      throw createError({
-        statusCode: 400,
-        message: 'Неверный ID пользователя'
-      })
-    }
-
     const query = getQuery(event)
     const page = query.page ? Number(query.page) : undefined
     const limit = query.limit ? Number(query.limit) : undefined
     const isArchived = query.isArchived ? query.isArchived === 'true' : undefined
-    const groupId = query.groupId ? Number(query.groupId) : undefined
+    const externalEntityId = query.externalEntityId ? Number(query.externalEntityId) : undefined
 
     // Валидация параметров
     if (page !== undefined && (isNaN(page) || page < 1)) {
@@ -32,19 +24,19 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    if (groupId !== undefined && isNaN(groupId)) {
+    if (externalEntityId !== undefined && isNaN(externalEntityId)) {
       throw createError({
         statusCode: 400,
-        message: 'Неверный параметр groupId'
+        message: 'Неверный параметр externalEntityId'
       })
     }
 
-    const strategyService = new StrategyService()
-    const result = await strategyService.getUserStrategies(userId, {
+    const walletService = new WalletService()
+    const result = await walletService.getAllWallets({
       page,
       limit,
       isArchived,
-      groupId
+      externalEntityId
     })
     return result
   } catch (error) {
@@ -52,7 +44,7 @@ export default defineEventHandler(async (event) => {
     if (err.statusCode) throw error
     throw createError({
       statusCode: 500,
-      message: 'Ошибка при получении стратегий'
+      message: 'Ошибка при получении кошельков'
     })
   }
 }) 
