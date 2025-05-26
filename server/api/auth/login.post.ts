@@ -39,21 +39,19 @@ export default defineEventHandler(async (event) => {
     }
 
     // Generate JWT token
-    const config = useRuntimeConfig()
+    const secret = process.env.JWT_SECRET || 'your-secret-key'
+    const expiresIn = process.env.JWT_EXPIRES_IN || '7d'
     const token = jwt.sign(
       { userId: user.id },
-      config.jwtSecret,
-      { expiresIn: config.jwtExpiresIn }
+      secret,
+      { expiresIn }
     )
-
-    // Generate CSRF token
-    const csrfToken = randomBytes(32).toString('hex')
 
     // Create session
     await prisma.session.create({
       data: {
         userId: user.id,
-        token: csrfToken,
+        token,
         userAgent: event.node.req.headers['user-agent'],
         ipAddress: event.node.req.socket.remoteAddress,
       },
@@ -74,7 +72,7 @@ export default defineEventHandler(async (event) => {
         name: user.name,
         role: user.role,
       },
-      csrfToken,
+      token,
     }
   } catch (error) {
     if (error instanceof z.ZodError) {

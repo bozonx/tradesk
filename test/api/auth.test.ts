@@ -74,7 +74,7 @@ describe('Authentication', () => {
       expect(data.user).toBeDefined()
       expect(data.user.email).toBe('auth_test@example.com')
       expect(data.user.name).toBe('Auth Test User')
-      expect(data.csrfToken).toBeDefined()
+      expect(data.token).toBeDefined()
 
       // Check cookies
       const cookies = response.headers.get('set-cookie')
@@ -87,7 +87,7 @@ describe('Authentication', () => {
         where: { userId: testUser.id }
       })
       expect(session).toBeDefined()
-      expect(session?.token).toBe(data.csrfToken)
+      expect(session?.token).toBe(data.token)
     })
 
     it('should not login with invalid password', async () => {
@@ -139,7 +139,7 @@ describe('Authentication', () => {
       expect(response.status).toBe(400)
       const data = await response.json()
       expect(data.message).toBe('Invalid input')
-      expect(data.data).toBeDefined()
+      expect(data.errors).toBeDefined()
     })
   })
 
@@ -165,7 +165,7 @@ describe('Authentication', () => {
       expect(data.user).toBeDefined()
       expect(data.user.email).toBe(newUserData.email)
       expect(data.user.name).toBe(newUserData.name)
-      expect(data.csrfToken).toBeDefined()
+      expect(data.token).toBeDefined()
 
       // Verify user was created
       const user = await prisma.user.findUnique({
@@ -209,7 +209,7 @@ describe('Authentication', () => {
       expect(response.status).toBe(400)
       const data = await response.json()
       expect(data.message).toBe('Invalid input')
-      expect(data.data).toBeDefined()
+      expect(data.errors).toBeDefined()
     })
   })
 
@@ -279,7 +279,7 @@ describe('Authentication', () => {
         headers: {
           'Content-Type': 'application/json',
           'Cookie': cookies || '',
-          'X-CSRF-Token': loginData.csrfToken,
+          'X-CSRF-Token': loginData.token,
         },
       })
 

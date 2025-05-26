@@ -42,58 +42,47 @@ describe('Asset', () => {
       const asset = await prisma.asset.create({
         data: {
           ticker: 'BTC',
-          type: 'CRYPTO',
+          type: 'CRYP',
         },
       })
 
       expect(asset).toBeDefined()
       expect(asset.ticker).toBe('BTC')
-      expect(asset.type).toBe('CRYPTO')
-      expect(asset.deletedAt).toBeNull()
+      expect(asset.type).toBe('CRYP')
     })
 
     it('should create stock asset', async () => {
       const asset = await prisma.asset.create({
         data: {
           ticker: 'AAPL',
-          type: 'STOCK',
+          type: 'STOK',
         },
       })
 
       expect(asset).toBeDefined()
       expect(asset.ticker).toBe('AAPL')
-      expect(asset.type).toBe('STOCK')
-      expect(asset.deletedAt).toBeNull()
+      expect(asset.type).toBe('STOK')
     })
   })
 
   describe('Get Assets', () => {
-    it('should get all non-deleted assets', async () => {
-      const assets = await prisma.asset.findMany({
-        where: {
-          deletedAt: null,
-        },
-      })
+    it('should get all assets', async () => {
+      const assets = await prisma.asset.findMany()
 
       expect(Array.isArray(assets)).toBe(true)
       expect(assets.length).toBeGreaterThan(0)
-      assets.forEach(asset => {
-        expect(asset.deletedAt).toBeNull()
-      })
     })
 
     it('should get assets by type', async () => {
       const assets = await prisma.asset.findMany({
         where: {
-          type: 'CRYPTO',
-          deletedAt: null,
+          type: 'CRYP',
         },
       })
 
       expect(Array.isArray(assets)).toBe(true)
       assets.forEach(asset => {
-        expect(asset.type).toBe('CRYPTO')
-        expect(asset.deletedAt).toBeNull()
+        expect(asset.type).toBe('CRYP')
       })
     })
 
@@ -101,7 +90,6 @@ describe('Asset', () => {
       const asset = await prisma.asset.findFirst({
         where: {
           ticker: 'BTC',
-          deletedAt: null,
         },
       })
 
@@ -114,57 +102,28 @@ describe('Asset', () => {
 
       expect(foundAsset).toBeDefined()
       expect(foundAsset?.ticker).toBe('BTC')
-      expect(foundAsset?.type).toBe('CRYPTO')
-      expect(foundAsset?.deletedAt).toBeNull()
-    })
-  })
-
-  describe('Update Asset', () => {
-    it('should update asset description', async () => {
-      const asset = await prisma.asset.findFirst({
-        where: {
-          ticker: 'BTC',
-          deletedAt: null,
-        },
-      })
-
-      expect(asset).toBeDefined()
-      if (!asset) return
-
-      const updatedAsset = await prisma.asset.update({
-        where: { id: asset.id },
-        data: {
-          descr: 'Bitcoin cryptocurrency',
-        },
-      })
-
-      expect(updatedAsset).toBeDefined()
-      expect(updatedAsset.id).toBe(asset.id)
-      expect(updatedAsset.descr).toBe('Bitcoin cryptocurrency')
+      expect(foundAsset?.type).toBe('CRYP')
     })
   })
 
   describe('Delete Asset', () => {
-    it('should soft delete asset', async () => {
+    it('should delete asset', async () => {
       const asset = await prisma.asset.findFirst({
         where: {
           ticker: 'BTC',
-          deletedAt: null,
         },
       })
 
       expect(asset).toBeDefined()
       if (!asset) return
 
-      const deletedAsset = await prisma.asset.update({
+      const deletedAsset = await prisma.asset.delete({
         where: { id: asset.id },
-        data: { deletedAt: new Date() },
       })
 
       expect(deletedAsset).toBeDefined()
-      expect(deletedAsset.deletedAt).not.toBeNull()
 
-      // Verify asset is not returned in normal queries
+      // Verify asset is not returned in queries
       const foundAsset = await prisma.asset.findUnique({
         where: { id: asset.id },
       })

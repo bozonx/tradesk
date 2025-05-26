@@ -42,6 +42,14 @@ describe('Dashboard', () => {
       },
     })
 
+    // Create test asset
+    testAsset = await prisma.asset.create({
+      data: {
+        ticker: 'BTC',
+        type: 'CRYP',
+      },
+    })
+
     // Create test position
     testPosition = await prisma.position.create({
       data: {
@@ -49,14 +57,6 @@ describe('Dashboard', () => {
         type: 'LONG',
         descr: 'Test position for dashboard',
         portfolioId: testPortfolio.id,
-      },
-    })
-
-    // Create test asset
-    testAsset = await prisma.asset.create({
-      data: {
-        ticker: 'BTC',
-        type: 'CRYPTO',
       },
     })
 
@@ -101,7 +101,14 @@ describe('Dashboard', () => {
         },
         include: {
           portfolio: true,
-          asset: true,
+          transactions: {
+            where: {
+              deletedAt: null,
+            },
+            include: {
+              toAsset: true,
+            },
+          },
         },
       })
 
@@ -111,12 +118,12 @@ describe('Dashboard', () => {
         expect(position.userId).toBe(testUser.id)
         expect(position.deletedAt).toBeNull()
         expect(position.portfolio).toBeDefined()
-        expect(position.asset).toBeDefined()
+        expect(Array.isArray(position.transactions)).toBe(true)
       })
     })
 
-    it('should get recent activities', async () => {
-      const activities = await prisma.activity.findMany({
+    it('should get recent transactions', async () => {
+      const transactions = await prisma.transaction.findMany({
         where: {
           userId: testUser.id,
           deletedAt: null,
@@ -125,31 +132,36 @@ describe('Dashboard', () => {
           createdAt: 'desc',
         },
         take: 10,
+        include: {
+          toAsset: true,
+          fromAsset: true,
+        },
       })
 
-      expect(Array.isArray(activities)).toBe(true)
-      activities.forEach(activity => {
-        expect(activity.userId).toBe(testUser.id)
-        expect(activity.deletedAt).toBeNull()
+      expect(Array.isArray(transactions)).toBe(true)
+      transactions.forEach(transaction => {
+        expect(transaction.userId).toBe(testUser.id)
+        expect(transaction.deletedAt).toBeNull()
+        expect(transaction.toAsset).toBeDefined()
       })
     })
 
     it('should get asset distribution', async () => {
-      const positions = await prisma.position.findMany({
+      const transactions = await prisma.transaction.findMany({
         where: {
           userId: testUser.id,
           deletedAt: null,
         },
         include: {
-          asset: true,
+          toAsset: true,
         },
       })
 
-      expect(Array.isArray(positions)).toBe(true)
-      positions.forEach(position => {
-        expect(position.userId).toBe(testUser.id)
-        expect(position.deletedAt).toBeNull()
-        expect(position.asset).toBeDefined()
+      expect(Array.isArray(transactions)).toBe(true)
+      transactions.forEach(transaction => {
+        expect(transaction.userId).toBe(testUser.id)
+        expect(transaction.deletedAt).toBeNull()
+        expect(transaction.toAsset).toBeDefined()
       })
     })
 
@@ -163,6 +175,10 @@ describe('Dashboard', () => {
           transactions: {
             where: {
               deletedAt: null,
+            },
+            include: {
+              toAsset: true,
+              fromAsset: true,
             },
           },
         },
