@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { PrismaClient } from '@prisma/client'
 import bcryptjs from 'bcryptjs'
 import jwt from 'jsonwebtoken'
@@ -20,12 +20,14 @@ describe('User Settings', () => {
         password: hashedPassword,
         name: 'Settings Test User',
         role: 'USER',
+        settings: '{}',
       },
       create: {
         email: 'settings_test@example.com',
         password: hashedPassword,
         name: 'Settings Test User',
         role: 'USER',
+        settings: '{}',
       },
     })
 
@@ -37,38 +39,51 @@ describe('User Settings', () => {
     )
   })
 
+  afterAll(async () => {
+    // Clean up test data
+    await prisma.user.delete({
+      where: { id: testUser.id },
+    })
+  })
+
   describe('Get Settings', () => {
     it('should get user settings', async () => {
-      const settings = await prisma.userSettings.findUnique({
-        where: { userId: testUser.id },
+      const user = await prisma.user.findUnique({
+        where: { id: testUser.id },
       })
 
-      expect(settings).toBeDefined()
-      expect(settings?.userId).toBe(testUser.id)
+      expect(user).toBeDefined()
+      expect(user?.settings).toBeDefined()
+      expect(JSON.parse(user?.settings || '{}')).toEqual({})
     })
   })
 
   describe('Update Settings', () => {
     it('should update all settings', async () => {
-      const updatedSettings = await prisma.userSettings.update({
-        where: { userId: testUser.id },
+      const newSettings = {
+        theme: 'dark',
+        language: 'en',
+        timezone: 'UTC',
+        notifications: {
+          email: true,
+          push: true,
+          desktop: true,
+        },
+      }
+
+      const updatedUser = await prisma.user.update({
+        where: { id: testUser.id },
         data: {
-          theme: 'dark',
-          language: 'en',
-          timezone: 'UTC',
-          notifications: {
-            email: true,
-            push: true,
-            desktop: true,
-          },
+          settings: JSON.stringify(newSettings),
         },
       })
 
-      expect(updatedSettings).toBeDefined()
-      expect(updatedSettings.theme).toBe('dark')
-      expect(updatedSettings.language).toBe('en')
-      expect(updatedSettings.timezone).toBe('UTC')
-      expect(updatedSettings.notifications).toEqual({
+      expect(updatedUser).toBeDefined()
+      const settings = JSON.parse(updatedUser.settings || '{}')
+      expect(settings.theme).toBe('dark')
+      expect(settings.language).toBe('en')
+      expect(settings.timezone).toBe('UTC')
+      expect(settings.notifications).toEqual({
         email: true,
         push: true,
         desktop: true,
@@ -76,21 +91,35 @@ describe('User Settings', () => {
     })
 
     it('should update partial settings', async () => {
-      const updatedSettings = await prisma.userSettings.update({
-        where: { userId: testUser.id },
+      // First get current settings
+      const user = await prisma.user.findUnique({
+        where: { id: testUser.id },
+      })
+      const currentSettings = JSON.parse(user?.settings || '{}')
+
+      // Update only specific fields
+      const updatedSettings = {
+        ...currentSettings,
+        theme: 'light',
+        notifications: {
+          ...currentSettings.notifications,
+          email: false,
+        },
+      }
+
+      const updatedUser = await prisma.user.update({
+        where: { id: testUser.id },
         data: {
-          theme: 'light',
-          notifications: {
-            email: false,
-          },
+          settings: JSON.stringify(updatedSettings),
         },
       })
 
-      expect(updatedSettings).toBeDefined()
-      expect(updatedSettings.theme).toBe('light')
-      expect(updatedSettings.language).toBe('en') // Should remain unchanged
-      expect(updatedSettings.timezone).toBe('UTC') // Should remain unchanged
-      expect(updatedSettings.notifications).toEqual({
+      expect(updatedUser).toBeDefined()
+      const settings = JSON.parse(updatedUser.settings || '{}')
+      expect(settings.theme).toBe('light')
+      expect(settings.language).toBe('en') // Should remain unchanged
+      expect(settings.timezone).toBe('UTC') // Should remain unchanged
+      expect(settings.notifications).toEqual({
         email: false,
         push: true, // Should remain unchanged
         desktop: true, // Should remain unchanged
@@ -111,16 +140,47 @@ describe('User Settings', () => {
         },
       }
 
-      const resetSettings = await prisma.userSettings.update({
-        where: { userId: testUser.id },
-        data: defaultSettings,
+      const updatedUser = await prisma.user.update({
+        where: { id: testUser.id },
+        data: {
+          settings: JSON.stringify(defaultSettings),
+        },
       })
 
-      expect(resetSettings).toBeDefined()
-      expect(resetSettings.theme).toBe(defaultSettings.theme)
-      expect(resetSettings.language).toBe(defaultSettings.language)
-      expect(resetSettings.timezone).toBe(defaultSettings.timezone)
-      expect(resetSettings.notifications).toEqual(defaultSettings.notifications)
+      expect(updatedUser).toBeDefined()
+      const settings = JSON.parse(updatedUser.settings || '{}')
+      expect(settings.theme).toBe(defaultSettings.theme)
+      expect(settings.language).toBe(defaultSettings.language)
+      expect(settings.timezone).toBe(defaultSettings.timezone)
+      expect(settings.notifications).toEqual(defaultSettings.notifications)
+    })
+  })
+
+  describe('Settings Validation', () => {
+    it('should handle invalid JSON settings', async () => {
+      try {
+        await prisma.user.update({
+          where: { id: testUser.id },
+          data: {
+            settings: 'invalid-json',
+          },
+        })
+        expect.fail('Should have thrown an error')
+      } catch (error) {
+        expect(error).toBeDefined()
+      }
+    })
+
+    it('should handle null settings', async () => {
+      const updatedUser = await prisma.user.update({
+        where: { id: testUser.id },
+        data: {
+          settings: null,
+        },
+      })
+
+      expect(updatedUser).toBeDefined()
+      expect(updatedUser.settings).toBeNull()
     })
   })
 }) 

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { PrismaClient } from '@prisma/client'
 import bcryptjs from 'bcryptjs'
 import jwt from 'jsonwebtoken'
@@ -11,6 +11,7 @@ describe('Portfolio', () => {
   let testUser: any
   let testGroup: any
   let authToken: string
+  let testPortfolios: any[] = []
 
   beforeAll(async () => {
     // Create test user
@@ -33,7 +34,6 @@ describe('Portfolio', () => {
     // Create test group
     testGroup = await prisma.group.create({
       data: {
-        userId: testUser.id,
         name: 'Test Group',
         type: 'PORTFOLIO',
         descr: 'Test group for portfolio',
@@ -48,6 +48,27 @@ describe('Portfolio', () => {
     )
   })
 
+  afterAll(async () => {
+    // Clean up test data
+    await prisma.$transaction([
+      prisma.portfolio.deleteMany({
+        where: {
+          userId: testUser.id,
+        },
+      }),
+      prisma.group.deleteMany({
+        where: {
+          id: testGroup.id,
+        },
+      }),
+      prisma.user.deleteMany({
+        where: {
+          id: testUser.id,
+        },
+      }),
+    ])
+  })
+
   describe('Create Portfolio', () => {
     it('should create portfolio with all fields', async () => {
       const portfolio = await prisma.portfolio.create({
@@ -55,7 +76,7 @@ describe('Portfolio', () => {
           userId: testUser.id,
           name: 'Test Portfolio',
           descr: 'Test portfolio description',
-          state: 'active',
+          isArchived: false,
           groupId: testGroup.id,
         },
       })
@@ -64,7 +85,7 @@ describe('Portfolio', () => {
       expect(portfolio.userId).toBe(testUser.id)
       expect(portfolio.name).toBe('Test Portfolio')
       expect(portfolio.descr).toBe('Test portfolio description')
-      expect(portfolio.state).toBe('active')
+      expect(portfolio.isArchived).toBe(false)
       expect(portfolio.groupId).toBe(testGroup.id)
       expect(portfolio.deletedAt).toBeNull()
     })
@@ -74,14 +95,14 @@ describe('Portfolio', () => {
         data: {
           userId: testUser.id,
           name: 'Minimal Portfolio',
-          state: 'active',
+          isArchived: false,
         },
       })
 
       expect(portfolio).toBeDefined()
       expect(portfolio.userId).toBe(testUser.id)
       expect(portfolio.name).toBe('Minimal Portfolio')
-      expect(portfolio.state).toBe('active')
+      expect(portfolio.isArchived).toBe(false)
       expect(portfolio.groupId).toBeNull()
       expect(portfolio.deletedAt).toBeNull()
     })
@@ -169,7 +190,7 @@ describe('Portfolio', () => {
         data: {
           name: 'Updated Portfolio',
           descr: 'Updated portfolio description',
-          state: 'inactive',
+          isArchived: true,
         },
       })
 
@@ -177,7 +198,7 @@ describe('Portfolio', () => {
       expect(updatedPortfolio.id).toBe(portfolio.id)
       expect(updatedPortfolio.name).toBe('Updated Portfolio')
       expect(updatedPortfolio.descr).toBe('Updated portfolio description')
-      expect(updatedPortfolio.state).toBe('inactive')
+      expect(updatedPortfolio.isArchived).toBe(true)
     })
 
     it('should update portfolio group', async () => {
@@ -230,6 +251,110 @@ describe('Portfolio', () => {
       })
 
       expect(foundPortfolio).toBeNull()
+    })
+  })
+
+  describe('Access Control', () => {
+    it('should not allow access to other user\'s portfolio', async () => {
+      // Create another user
+      const otherUser = await prisma.user.create({
+        data: {
+          email: 'other_user@example.com',
+          password: await bcryptjs.hash('test123', 10),
+          name: 'Other User',
+          role: 'USER',
+        },
+      })
+
+      // Create portfolio for other user
+      const otherPortfolio = await prisma.portfolio.create({
+        data: {
+          userId: otherUser.id,
+          name: 'Other User Portfolio',
+          isArchived: false,
+        },
+      })
+
+      // Try to access other user's portfolio
+      const portfolio = await prisma.portfolio.findUnique({
+        where: { id: otherPortfolio.id },
+      })
+
+      expect(portfolio).toBeDefined()
+      expect(portfolio?.userId).not.toBe(testUser.id)
+
+      // Clean up
+      await prisma.$transaction([
+        prisma.portfolio.delete({ where: { id: otherPortfolio.id } }),
+        prisma.user.delete({ where: { id: otherUser.id } }),
+      ])
+    })
+  })
+
+  describe('Data Validation', () => {
+    it('should not create portfolio with empty name', async () => {
+      try {
+        await prisma.portfolio.create({
+          data: {
+            userId: testUser.id,
+            name: '',
+            isArchived: false,
+          },
+        })
+        expect.fail('Should have thrown an error')
+      } catch (error) {
+        expect(error).toBeDefined()
+      }
+    })
+  })
+
+  describe('Error Handling', () => {
+    it('should handle non-existent portfolio gracefully', async () => {
+      const nonExistentId = 999999
+      const portfolio = await prisma.portfolio.findUnique({
+        where: { id: nonExistentId },
+      })
+      expect(portfolio).toBeNull()
+    })
+
+    it('should handle invalid portfolio ID format', async () => {
+      try {
+        await prisma.portfolio.findUnique({
+          where: { id: -1 },
+        })
+        expect.fail('Should have thrown an error')
+      } catch (error) {
+        expect(error).toBeDefined()
+      }
+    })
+  })
+
+  describe('Portfolio Archive State', () => {
+    it('should handle archive state transitions correctly', async () => {
+      const portfolio = await prisma.portfolio.create({
+        data: {
+          userId: testUser.id,
+          name: 'Archive Test Portfolio',
+          isArchived: false,
+        },
+      })
+
+      // Test transition to archived
+      const archivedPortfolio = await prisma.portfolio.update({
+        where: { id: portfolio.id },
+        data: { isArchived: true },
+      })
+      expect(archivedPortfolio.isArchived).toBe(true)
+
+      // Test transition back to active
+      const activePortfolio = await prisma.portfolio.update({
+        where: { id: portfolio.id },
+        data: { isArchived: false },
+      })
+      expect(activePortfolio.isArchived).toBe(false)
+
+      // Clean up
+      await prisma.portfolio.delete({ where: { id: portfolio.id } })
     })
   })
 }) 

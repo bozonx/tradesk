@@ -62,5 +62,25 @@ beforeAll(async () => {
 
 // Cleanup after all tests
 afterAll(async () => {
-  await prisma.$disconnect()
+  try {
+    // Clean up all test data
+    await prisma.$transaction([
+      prisma.transaction.deleteMany(),
+      prisma.tradeOrder.deleteMany(),
+      prisma.position.deleteMany(),
+      prisma.wallet.deleteMany(),
+      prisma.portfolio.deleteMany(),
+      prisma.strategy.deleteMany(),
+      prisma.session.deleteMany(),
+      prisma.user.deleteMany(),
+      prisma.asset.deleteMany(),
+      prisma.externalEntity.deleteMany(),
+      prisma.group.deleteMany(),
+    ])
+  } catch (error) {
+    console.error('Error in test cleanup:', error)
+    throw error
+  } finally {
+    await prisma.$disconnect()
+  }
 }) 

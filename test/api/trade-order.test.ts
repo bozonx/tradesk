@@ -13,6 +13,7 @@ describe('Trade Order', () => {
   let testPosition: any
   let testAsset: any
   let authToken: string
+  let testWallet: any
 
   beforeAll(async () => {
     // Create test user
@@ -53,10 +54,19 @@ describe('Trade Order', () => {
     })
 
     // Create test asset
-    testAsset = await prisma.asset.create({
+    testAsset = await prisma.asset.upsert({
+      where: { ticker: 'BTC' },
+      update: { type: 'CRYPTO' },
+      create: { ticker: 'BTC', type: 'CRYPTO' },
+    })
+
+    // Create test wallet
+    testWallet = await prisma.wallet.create({
       data: {
-        ticker: 'BTC',
-        type: 'CRYPTO',
+        userId: testUser.id,
+        name: 'Test Wallet',
+        descr: 'Test wallet for trade orders',
+        state: 'active',
       },
     })
 
@@ -73,29 +83,33 @@ describe('Trade Order', () => {
       const order = await prisma.tradeOrder.create({
         data: {
           userId: testUser.id,
-          type: 'LIMIT',
-          side: 'BUY',
-          amount: 1.5,
+          fromWalletId: testWallet.id,
+          fromAssetId: testAsset.id,
+          fromValue: 1.5,
+          toWalletId: testWallet.id,
+          toAssetId: testAsset.id,
+          toValue: 1.5,
           price: 50000,
-          status: 'PENDING',
-          descr: 'Test limit order',
-          portfolioId: testPortfolio.id,
+          action: 'BUY',
+          status: 'OPND',
+          note: 'Test limit order',
           positionId: testPosition.id,
-          assetId: testAsset.id,
         },
       })
 
       expect(order).toBeDefined()
       expect(order.userId).toBe(testUser.id)
-      expect(order.type).toBe('LIMIT')
-      expect(order.side).toBe('BUY')
-      expect(order.amount).toBe(1.5)
+      expect(order.fromWalletId).toBe(testWallet.id)
+      expect(order.fromAssetId).toBe(testAsset.id)
+      expect(order.fromValue).toBe(1.5)
+      expect(order.toWalletId).toBe(testWallet.id)
+      expect(order.toAssetId).toBe(testAsset.id)
+      expect(order.toValue).toBe(1.5)
       expect(order.price).toBe(50000)
-      expect(order.status).toBe('PENDING')
-      expect(order.descr).toBe('Test limit order')
-      expect(order.portfolioId).toBe(testPortfolio.id)
+      expect(order.action).toBe('BUY')
+      expect(order.status).toBe('OPND')
+      expect(order.note).toBe('Test limit order')
       expect(order.positionId).toBe(testPosition.id)
-      expect(order.assetId).toBe(testAsset.id)
       expect(order.deletedAt).toBeNull()
     })
 
@@ -103,27 +117,33 @@ describe('Trade Order', () => {
       const order = await prisma.tradeOrder.create({
         data: {
           userId: testUser.id,
-          type: 'MARKET',
-          side: 'SELL',
-          amount: 0.5,
-          status: 'PENDING',
-          descr: 'Test market order',
-          portfolioId: testPortfolio.id,
+          fromWalletId: testWallet.id,
+          fromAssetId: testAsset.id,
+          fromValue: 0.5,
+          toWalletId: testWallet.id,
+          toAssetId: testAsset.id,
+          toValue: 0.5,
+          price: 48000,
+          action: 'SELL',
+          status: 'OPND',
+          note: 'Test market order',
           positionId: testPosition.id,
-          assetId: testAsset.id,
         },
       })
 
       expect(order).toBeDefined()
       expect(order.userId).toBe(testUser.id)
-      expect(order.type).toBe('MARKET')
-      expect(order.side).toBe('SELL')
-      expect(order.amount).toBe(0.5)
-      expect(order.status).toBe('PENDING')
-      expect(order.descr).toBe('Test market order')
-      expect(order.portfolioId).toBe(testPortfolio.id)
+      expect(order.fromWalletId).toBe(testWallet.id)
+      expect(order.fromAssetId).toBe(testAsset.id)
+      expect(order.fromValue).toBe(0.5)
+      expect(order.toWalletId).toBe(testWallet.id)
+      expect(order.toAssetId).toBe(testAsset.id)
+      expect(order.toValue).toBe(0.5)
+      expect(order.price).toBe(48000)
+      expect(order.action).toBe('SELL')
+      expect(order.status).toBe('OPND')
+      expect(order.note).toBe('Test market order')
       expect(order.positionId).toBe(testPosition.id)
-      expect(order.assetId).toBe(testAsset.id)
       expect(order.deletedAt).toBeNull()
     })
   })
@@ -135,11 +155,6 @@ describe('Trade Order', () => {
           userId: testUser.id,
           deletedAt: null,
         },
-        include: {
-          portfolio: true,
-          position: true,
-          asset: true,
-        },
       })
 
       expect(Array.isArray(orders)).toBe(true)
@@ -147,9 +162,6 @@ describe('Trade Order', () => {
       orders.forEach(order => {
         expect(order.userId).toBe(testUser.id)
         expect(order.deletedAt).toBeNull()
-        expect(order.portfolio).toBeDefined()
-        expect(order.position).toBeDefined()
-        expect(order.asset).toBeDefined()
       })
     })
 
@@ -166,20 +178,12 @@ describe('Trade Order', () => {
 
       const foundOrder = await prisma.tradeOrder.findUnique({
         where: { id: order.id },
-        include: {
-          portfolio: true,
-          position: true,
-          asset: true,
-        },
       })
 
       expect(foundOrder).toBeDefined()
       expect(foundOrder?.id).toBe(order.id)
       expect(foundOrder?.userId).toBe(testUser.id)
       expect(foundOrder?.deletedAt).toBeNull()
-      expect(foundOrder?.portfolio).toBeDefined()
-      expect(foundOrder?.position).toBeDefined()
-      expect(foundOrder?.asset).toBeDefined()
     })
   })
 
@@ -198,19 +202,17 @@ describe('Trade Order', () => {
       const updatedOrder = await prisma.tradeOrder.update({
         where: { id: order.id },
         data: {
-          amount: 2.0,
           price: 52000,
-          status: 'FILLED',
-          descr: 'Updated order',
+          status: 'FILL',
+          note: 'Updated order',
         },
       })
 
       expect(updatedOrder).toBeDefined()
       expect(updatedOrder.id).toBe(order.id)
-      expect(updatedOrder.amount).toBe(2.0)
       expect(updatedOrder.price).toBe(52000)
-      expect(updatedOrder.status).toBe('FILLED')
-      expect(updatedOrder.descr).toBe('Updated order')
+      expect(updatedOrder.status).toBe('FILL')
+      expect(updatedOrder.note).toBe('Updated order')
     })
   })
 
