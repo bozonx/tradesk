@@ -32,6 +32,9 @@ async function ensureUser(userData: typeof testUsers[0]): Promise<number> {
 describe('Portfolio Service', () => {
   beforeEach(async () => {
     try {
+      // Очищаем все портфолио перед каждым тестом
+      await prisma.portfolio.deleteMany()
+      
       // Создаем тестовых пользователей
       userId1 = await ensureUser(testUsers[0])
       userId2 = await ensureUser(testUsers[1])

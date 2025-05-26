@@ -2,22 +2,26 @@ import { PrismaClient } from '@prisma/client'
 import { execSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
+import os from 'os'
 
-// Путь к тестовой базе данных
-const TEST_DB_PATH = path.join(process.cwd(), 'prisma/test.db')
+// Путь к схеме
 const SCHEMA_PATH = path.join(process.cwd(), 'prisma/schema.prisma')
 
-// Функция для создания тестовой базы данных
-export async function setupTestDatabase() {
-  try {
-    // Удаляем старую тестовую базу если она существует
-    if (fs.existsSync(TEST_DB_PATH)) {
-      fs.unlinkSync(TEST_DB_PATH)
-    }
+// Кэш для схемы
+let schemaCache: string | null = null
 
+// Функция для создания тестовой базы данных
+export async function setupTestDatabase(testName: string) {
+  let tempDbPath: string | null = null
+  let testPrisma: PrismaClient | null = null
+
+  try {
+    // Создаем уникальный путь для тестовой БД
+    tempDbPath = path.join(os.tmpdir(), `test-${testName}-${Date.now()}.db`)
+    
     // Создаем новый клиент для тестовой базы
-    const testPrisma = new PrismaClient({
-      datasourceUrl: `file:${TEST_DB_PATH}`
+    testPrisma = new PrismaClient({
+      datasourceUrl: `file:${tempDbPath}`
     })
 
     // Проверяем существование схемы
@@ -25,14 +29,19 @@ export async function setupTestDatabase() {
       throw new Error(`Schema file not found at ${SCHEMA_PATH}`)
     }
 
+    // Кэшируем схему
+    if (!schemaCache) {
+      schemaCache = fs.readFileSync(SCHEMA_PATH, 'utf-8')
+    }
+
     // Применяем миграции к тестовой базе
     execSync('npx prisma migrate deploy', {
       env: {
         ...process.env,
-        DATABASE_URL: `file:${TEST_DB_PATH}`,
+        DATABASE_URL: `file:${tempDbPath}`,
         PRISMA_SCHEMA_PATH: SCHEMA_PATH
       },
-      stdio: 'inherit' // Показываем вывод команды
+      stdio: 'inherit'
     })
 
     // Проверяем, что таблицы созданы
@@ -48,8 +57,24 @@ export async function setupTestDatabase() {
     // Проверяем подключение к базе
     await testPrisma.$connect()
 
+    // Добавляем обработчик для удаления временного файла при закрытии соединения
+    const originalDisconnect = testPrisma.$disconnect
+    testPrisma.$disconnect = async () => {
+      await originalDisconnect.call(testPrisma)
+      if (tempDbPath && fs.existsSync(tempDbPath)) {
+        fs.unlinkSync(tempDbPath)
+      }
+    }
+
     return testPrisma
   } catch (error) {
+    // В случае ошибки удаляем временный файл и закрываем соединение
+    if (tempDbPath && fs.existsSync(tempDbPath)) {
+      fs.unlinkSync(tempDbPath)
+    }
+    if (testPrisma) {
+      await testPrisma.$disconnect()
+    }
     console.error('Error setting up test database:', error)
     throw error
   }
