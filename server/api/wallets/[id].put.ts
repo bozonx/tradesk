@@ -1,5 +1,5 @@
-import { GroupService } from '~/server/services/group.service'
-import { updateGroupSchema } from '~/server/schemas/group.schema'
+import { WalletService } from '~/server/services/wallet.service'
+import { updateWalletSchema } from '~/server/schemas/wallet.schema'
 import type { H3Error, ZodError } from '~/server/types/error'
 
 export default defineEventHandler(async (event) => {
@@ -8,35 +8,35 @@ export default defineEventHandler(async (event) => {
     if (isNaN(id)) {
       throw createError({
         statusCode: 400,
-        message: 'Неверный ID группы'
+        message: 'Неверный ID кошелька'
       })
     }
 
     const body = await readBody(event)
-    const validatedData = updateGroupSchema.parse(body)
+    const validatedData = updateWalletSchema.parse(body)
 
-    const groupService = new GroupService()
-    const group = await groupService.updateGroup(id, validatedData)
-    if (!group) {
+    const walletService = new WalletService()
+    const wallet = await walletService.updateWallet(id, validatedData)
+    if (!wallet) {
       throw createError({
         statusCode: 404,
-        message: 'Группа не найдена'
+        message: 'Кошелек не найден'
       })
     }
-    return group
+    return wallet
   } catch (error) {
     const err = error as H3Error | ZodError
     if (err.statusCode) throw error
     if (err.name === 'ZodError') {
       throw createError({
         statusCode: 400,
-        message: 'Неверные данные группы',
+        message: 'Неверные данные кошелька',
         data: err.errors
       })
     }
     throw createError({
       statusCode: 500,
-      message: 'Ошибка при обновлении группы'
+      message: 'Ошибка при обновлении кошелька'
     })
   }
 }) 

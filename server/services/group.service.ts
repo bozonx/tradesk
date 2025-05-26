@@ -5,15 +5,25 @@ import { createGroupSchema, updateGroupSchema } from '../schemas/group.schema'
 const prisma = new PrismaClient()
 
 export class GroupService {
-  // Получить все группы пользователя
-  async getUserGroups(userId: number) {
+  // Получить все группы
+  async getAllGroups() {
     return prisma.group.findMany({
-      where: {
-        userId,
-        deletedAt: null
-      },
       include: {
-        portfolios: true
+        portfolios: {
+          where: {
+            deletedAt: null
+          }
+        },
+        positions: {
+          where: {
+            deletedAt: null
+          }
+        },
+        strategies: {
+          where: {
+            deletedAt: null
+          }
+        }
       }
     })
   }
@@ -23,7 +33,21 @@ export class GroupService {
     return prisma.group.findUnique({
       where: { id },
       include: {
-        portfolios: true
+        portfolios: {
+          where: {
+            deletedAt: null
+          }
+        },
+        positions: {
+          where: {
+            deletedAt: null
+          }
+        },
+        strategies: {
+          where: {
+            deletedAt: null
+          }
+        }
       }
     })
   }
@@ -33,7 +57,9 @@ export class GroupService {
     return prisma.group.create({
       data,
       include: {
-        portfolios: true
+        portfolios: true,
+        positions: true,
+        strategies: true
       }
     })
   }
@@ -44,18 +70,29 @@ export class GroupService {
       where: { id },
       data,
       include: {
-        portfolios: true
+        portfolios: {
+          where: {
+            deletedAt: null
+          }
+        },
+        positions: {
+          where: {
+            deletedAt: null
+          }
+        },
+        strategies: {
+          where: {
+            deletedAt: null
+          }
+        }
       }
     })
   }
 
-  // Удалить группу (soft delete)
+  // Удалить группу
   async deleteGroup(id: number) {
-    return prisma.group.update({
-      where: { id },
-      data: {
-        deletedAt: new Date()
-      }
+    return prisma.group.delete({
+      where: { id }
     })
   }
 } 

@@ -1,5 +1,5 @@
-import { GroupService } from '~/server/services/group.service'
-import { updateGroupSchema } from '~/server/schemas/group.schema'
+import { StrategyService } from '~/server/services/strategy.service'
+import { updateStrategySchema } from '~/server/schemas/strategy.schema'
 import type { H3Error, ZodError } from '~/server/types/error'
 
 export default defineEventHandler(async (event) => {
@@ -8,35 +8,35 @@ export default defineEventHandler(async (event) => {
     if (isNaN(id)) {
       throw createError({
         statusCode: 400,
-        message: 'Неверный ID группы'
+        message: 'Неверный ID стратегии'
       })
     }
 
     const body = await readBody(event)
-    const validatedData = updateGroupSchema.parse(body)
+    const validatedData = updateStrategySchema.parse(body)
 
-    const groupService = new GroupService()
-    const group = await groupService.updateGroup(id, validatedData)
-    if (!group) {
+    const strategyService = new StrategyService()
+    const strategy = await strategyService.updateStrategy(id, validatedData)
+    if (!strategy) {
       throw createError({
         statusCode: 404,
-        message: 'Группа не найдена'
+        message: 'Стратегия не найдена'
       })
     }
-    return group
+    return strategy
   } catch (error) {
     const err = error as H3Error | ZodError
     if (err.statusCode) throw error
     if (err.name === 'ZodError') {
       throw createError({
         statusCode: 400,
-        message: 'Неверные данные группы',
+        message: 'Неверные данные стратегии',
         data: err.errors
       })
     }
     throw createError({
       statusCode: 500,
-      message: 'Ошибка при обновлении группы'
+      message: 'Ошибка при обновлении стратегии'
     })
   }
 }) 

@@ -1,4 +1,4 @@
-import { GroupService } from '~/server/services/group.service'
+import { StrategyService } from '~/server/services/strategy.service'
 import type { H3Error } from '~/server/types/error'
 
 export default defineEventHandler(async (event) => {
@@ -7,25 +7,25 @@ export default defineEventHandler(async (event) => {
     if (isNaN(id)) {
       throw createError({
         statusCode: 400,
-        message: 'Неверный ID группы'
+        message: 'Неверный ID стратегии'
       })
     }
 
-    const groupService = new GroupService()
-    const group = await groupService.deleteGroup(id)
-    if (!group) {
+    const strategyService = new StrategyService()
+    const strategy = await strategyService.deleteStrategy(id)
+    if (!strategy) {
       throw createError({
         statusCode: 404,
-        message: 'Группа не найдена'
+        message: 'Стратегия не найдена'
       })
     }
-    return group
+    return strategy
   } catch (error) {
     const err = error as H3Error
     if (err.statusCode) throw error
     throw createError({
       statusCode: 500,
-      message: 'Ошибка при удалении группы'
+      message: 'Ошибка при удалении стратегии'
     })
   }
 }) 

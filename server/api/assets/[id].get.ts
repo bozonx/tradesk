@@ -1,4 +1,4 @@
-import { GroupService } from '~/server/services/group.service'
+import { AssetService } from '~/server/services/asset.service'
 import type { H3Error } from '~/server/types/error'
 
 export default defineEventHandler(async (event) => {
@@ -7,25 +7,25 @@ export default defineEventHandler(async (event) => {
     if (isNaN(id)) {
       throw createError({
         statusCode: 400,
-        message: 'Неверный ID группы'
+        message: 'Неверный ID актива'
       })
     }
 
-    const groupService = new GroupService()
-    const group = await groupService.deleteGroup(id)
-    if (!group) {
+    const assetService = new AssetService()
+    const asset = await assetService.getAssetById(id)
+    if (!asset) {
       throw createError({
         statusCode: 404,
-        message: 'Группа не найдена'
+        message: 'Актив не найден'
       })
     }
-    return group
+    return asset
   } catch (error) {
     const err = error as H3Error
     if (err.statusCode) throw error
     throw createError({
       statusCode: 500,
-      message: 'Ошибка при удалении группы'
+      message: 'Ошибка при получении актива'
     })
   }
 }) 
