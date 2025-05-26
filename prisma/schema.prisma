@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["driverAdapters"]
 }
 
@@ -9,197 +9,196 @@ datasource db {
 }
 
 model User {
-  id        Int       @id @default(autoincrement())
-  email     String    @unique
-  password  String
-  name      String?
-  role      String    @default("USER") // ENUM('USER', 'ADMIN')
-  settings  String?   @default("{}")
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  deletedAt DateTime? @map("deleted_at")
-  sessions  Session[]
-  strategies Strategy[]
-  portfolios Portfolio[]
-  positions Position[]
+  id           Int           @id @default(autoincrement())
+  email        String        @unique
+  password     String
+  name         String?
+  role         String        @default("USER")
+  settings     String?       @default("{}")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  deletedAt    DateTime?     @map("deleted_at")
+  portfolios   Portfolio[]
+  positions    Position[]
+  sessions     Session[]
+  strategies   Strategy[]
+  tradeOrders  TradeOrder[]
   transactions Transaction[]
-  tradeOrders TradeOrder[]
-  wallets Wallet[]
-  notes     Note[]
+  wallets      Wallet[]
 }
 
 model Session {
-  id           Int      @id @default(autoincrement())
-  userId       Int      @map("user_id")
-  token        String   @unique
-  userAgent    String?  @map("user_agent")
-  ipAddress    String?  @map("ip_address")
-  lastActiveAt DateTime @default(now()) @map("last_active_at")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id           Int       @id @default(autoincrement())
+  userId       Int       @map("user_id")
+  token        String    @unique
+  userAgent    String?   @map("user_agent")
+  ipAddress    String?   @map("ip_address")
+  lastActiveAt DateTime  @default(now()) @map("last_active_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
   deletedAt    DateTime? @map("deleted_at")
-  user         User     @relation(fields: [userId], references: [id])
+  user         User      @relation(fields: [userId], references: [id])
 }
 
 model Portfolio {
-  id        Int       @id @default(autoincrement())
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  deletedAt DateTime? @map("deleted_at")
-  userId    Int       @map("user_id")
-  isArchived Boolean  @default(false) @map("is_archived")
-  groupId   Int?      @map("group_id")
-  name      String
-  descr     String?
-  state     String?
-  user      User      @relation(fields: [userId], references: [id])
-  group     Group?    @relation(fields: [groupId], references: [id])
-  positions Position[]
+  id         Int        @id @default(autoincrement())
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+  deletedAt  DateTime?  @map("deleted_at")
+  userId     Int        @map("user_id")
+  isArchived Boolean    @default(false) @map("is_archived")
+  groupId    Int?       @map("group_id")
+  name       String
+  descr      String?
+  state      String?
+  group      Group?     @relation(fields: [groupId], references: [id])
+  user       User       @relation(fields: [userId], references: [id])
+  positions  Position[]
 }
 
 model Position {
-  id          Int       @id @default(autoincrement())
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  deletedAt   DateTime? @map("deleted_at")
-  userId      Int       @map("user_id")
-  type        String    // ENUM('LONG', 'SHRT')
-  groupId     Int?      @map("group_id")
-  portfolioId Int?      @map("portfolio_id")
-  strategyId  Int?      @map("strategy_id")
-  descr       String?
-  user        User      @relation(fields: [userId], references: [id])
-  group       Group?    @relation(fields: [groupId], references: [id])
-  portfolio   Portfolio? @relation(fields: [portfolioId], references: [id])
-  strategy    Strategy?  @relation(fields: [strategyId], references: [id])
+  id           Int           @id @default(autoincrement())
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  deletedAt    DateTime?     @map("deleted_at")
+  userId       Int           @map("user_id")
+  type         String
+  groupId      Int?          @map("group_id")
+  portfolioId  Int?          @map("portfolio_id")
+  strategyId   Int?          @map("strategy_id")
+  descr        String?
+  strategy     Strategy?     @relation(fields: [strategyId], references: [id])
+  portfolio    Portfolio?    @relation(fields: [portfolioId], references: [id])
+  group        Group?        @relation(fields: [groupId], references: [id])
+  user         User          @relation(fields: [userId], references: [id])
+  tradeOrders  TradeOrder[]
   transactions Transaction[]
-  tradeOrders TradeOrder[]
 }
 
 model Transaction {
-  id            Int       @id @default(autoincrement())
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
-  deletedAt     DateTime? @map("deleted_at")
-  userId        Int       @map("user_id")
-  date          DateTime
-  positionId    Int?      @map("position_id")
-  partialOfId   Int?      @map("partial_of_id")
-  feeOfId       Int?      @map("fee_of_id")
-  tradeOrderId  Int?      @map("trade_order_id")
-  type          String    // ENUM('TRDE', 'TRNS', 'EXTR', 'FEE')
-  status        String    // ENUM('DONE', 'PEND', 'CANC')
-  fromWalletId  Int?      @map("from_wallet_id")
-  fromAssetId   Int?      @map("from_asset_id")
-  fromValue     Decimal?
-  toWalletId    Int       @map("to_wallet_id")
-  toAssetId     Int       @map("to_asset_id")
-  toValue       Decimal
-  note          String?
-  user          User      @relation(fields: [userId], references: [id])
-  position      Position? @relation(fields: [positionId], references: [id])
-  partialOf     Transaction? @relation("PartialTransactions", fields: [partialOfId], references: [id])
+  id                  Int           @id @default(autoincrement())
+  createdAt           DateTime      @default(now()) @map("created_at")
+  updatedAt           DateTime      @updatedAt @map("updated_at")
+  deletedAt           DateTime?     @map("deleted_at")
+  userId              Int           @map("user_id")
+  date                DateTime
+  positionId          Int?          @map("position_id")
+  partialOfId         Int?          @map("partial_of_id")
+  feeOfId             Int?          @map("fee_of_id")
+  tradeOrderId        Int?          @map("trade_order_id")
+  type                String
+  status              String
+  fromWalletId        Int?          @map("from_wallet_id")
+  fromAssetId         Int?          @map("from_asset_id")
+  fromValue           Decimal?
+  toWalletId          Int           @map("to_wallet_id")
+  toAssetId           Int           @map("to_asset_id")
+  toValue             Decimal
+  note                String?
+  toAsset             Asset         @relation("ToAsset", fields: [toAssetId], references: [id])
+  fromAsset           Asset?        @relation("FromAsset", fields: [fromAssetId], references: [id])
+  toWallet            Wallet        @relation("ToWallet", fields: [toWalletId], references: [id])
+  fromWallet          Wallet?       @relation("FromWallet", fields: [fromWalletId], references: [id])
+  tradeOrder          TradeOrder?   @relation(fields: [tradeOrderId], references: [id])
+  feeOf               Transaction?  @relation("FeeTransactions", fields: [feeOfId], references: [id])
+  feeTransactions     Transaction[] @relation("FeeTransactions")
+  partialOf           Transaction?  @relation("PartialTransactions", fields: [partialOfId], references: [id])
   partialTransactions Transaction[] @relation("PartialTransactions")
-  feeOf         Transaction? @relation("FeeTransactions", fields: [feeOfId], references: [id])
-  feeTransactions Transaction[] @relation("FeeTransactions")
-  tradeOrder    TradeOrder? @relation(fields: [tradeOrderId], references: [id])
-  fromWallet    Wallet?    @relation("FromWallet", fields: [fromWalletId], references: [id])
-  toWallet      Wallet     @relation("ToWallet", fields: [toWalletId], references: [id])
-  fromAsset     Asset?     @relation("FromAsset", fields: [fromAssetId], references: [id])
-  toAsset       Asset      @relation("ToAsset", fields: [toAssetId], references: [id])
+  position            Position?     @relation(fields: [positionId], references: [id])
+  user                User          @relation(fields: [userId], references: [id])
 }
 
 model Strategy {
-  id        Int       @id @default(autoincrement())
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  deletedAt DateTime? @map("deleted_at")
-  userId    Int       @map("user_id")
-  isArchived Boolean  @default(false) @map("is_archived")
-  groupId   Int?      @map("group_id")
-  name      String
-  descr     String?
-  state     String?
-  user      User      @relation(fields: [userId], references: [id])
-  group     Group?    @relation(fields: [groupId], references: [id])
-  positions Position[]
+  id         Int        @id @default(autoincrement())
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+  deletedAt  DateTime?  @map("deleted_at")
+  userId     Int        @map("user_id")
+  isArchived Boolean    @default(false) @map("is_archived")
+  groupId    Int?       @map("group_id")
+  name       String
+  descr      String?
+  state      String?
+  positions  Position[]
+  group      Group?     @relation(fields: [groupId], references: [id])
+  user       User       @relation(fields: [userId], references: [id])
 }
 
 model Group {
-  id        Int       @id @default(autoincrement())
-  type      String    // ENUM('PORTFOLIO', 'POSITION', 'STRATEGY')
-  name      String
-  descr     String?
+  id         Int         @id @default(autoincrement())
+  type       String
+  name       String
+  descr      String?
   portfolios Portfolio[]
-  positions Position[]
+  positions  Position[]
   strategies Strategy[]
 }
 
 model Asset {
-  id        Int       @id @default(autoincrement())
-  ticker    String    @unique
-  type      String    // ENUM('CRYP', 'FIAT', 'STOK', 'BOND', 'ETF')
+  id               Int           @id @default(autoincrement())
+  ticker           String        @unique
+  type             String
+  toTradeOrders    TradeOrder[]  @relation("ToAsset")
+  fromTradeOrders  TradeOrder[]  @relation("FromAsset")
+  toTransactions   Transaction[] @relation("ToAsset")
   fromTransactions Transaction[] @relation("FromAsset")
-  toTransactions Transaction[] @relation("ToAsset")
-  fromTradeOrders TradeOrder[] @relation("FromAsset")
-  toTradeOrders TradeOrder[] @relation("ToAsset")
 }
 
 model TradeOrder {
-  id              Int       @id @default(autoincrement())
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
-  deletedAt       DateTime? @map("deleted_at")
-  userId          Int       @map("user_id")
-  remoteOrderId   String?   @map("remote_order_id")
-  openDate        DateTime? @map("open_date")
-  fillDate        DateTime? @map("fill_date")
-  cancelDate      DateTime? @map("cancel_date")
-  expirationDate  DateTime? @map("expiration_date")
-  fromWalletId    Int       @map("from_wallet_id")
-  fromAssetId     Int       @map("from_asset_id")
-  fromValue       Decimal
-  toWalletId      Int       @map("to_wallet_id")
-  toAssetId       Int       @map("to_asset_id")
-  toValue         Decimal
-  lotSize         Decimal?  @map("lot_size")
-  price           Decimal?
-  action          String    // ENUM('BUY', 'SELL')
-  status          String    // ENUM('OPND', 'FILL', 'CANC', 'EXPR')
-  note            String?
-  data            String?
-  user            User      @relation(fields: [userId], references: [id])
-  position        Position? @relation(fields: [positionId], references: [id])
-  positionId      Int?      @map("position_id")
-  fromWallet      Wallet    @relation("FromWallet", fields: [fromWalletId], references: [id])
-  toWallet        Wallet    @relation("ToWallet", fields: [toWalletId], references: [id])
-  fromAsset       Asset     @relation("FromAsset", fields: [fromAssetId], references: [id])
-  toAsset         Asset     @relation("ToAsset", fields: [toAssetId], references: [id])
-  transactions    Transaction[]
+  id             Int           @id @default(autoincrement())
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  deletedAt      DateTime?     @map("deleted_at")
+  userId         Int           @map("user_id")
+  remoteOrderId  String?       @map("remote_order_id")
+  openDate       DateTime?     @map("open_date")
+  fillDate       DateTime?     @map("fill_date")
+  cancelDate     DateTime?     @map("cancel_date")
+  expirationDate DateTime?     @map("expiration_date")
+  fromWalletId   Int           @map("from_wallet_id")
+  fromAssetId    Int           @map("from_asset_id")
+  fromValue      Decimal
+  toWalletId     Int           @map("to_wallet_id")
+  toAssetId      Int           @map("to_asset_id")
+  toValue        Decimal
+  lotSize        Decimal?      @map("lot_size")
+  price          Decimal?
+  action         String
+  status         String
+  note           String?
+  data           String?
+  positionId     Int?          @map("position_id")
+  toAsset        Asset         @relation("ToAsset", fields: [toAssetId], references: [id])
+  fromAsset      Asset         @relation("FromAsset", fields: [fromAssetId], references: [id])
+  toWallet       Wallet        @relation("ToWallet", fields: [toWalletId], references: [id])
+  fromWallet     Wallet        @relation("FromWallet", fields: [fromWalletId], references: [id])
+  position       Position?     @relation(fields: [positionId], references: [id])
+  user           User          @relation(fields: [userId], references: [id])
+  transactions   Transaction[]
 }
 
 model Wallet {
-  id              Int       @id @default(autoincrement())
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
-  deletedAt       DateTime? @map("deleted_at")
-  userId          Int       @map("user_id")
-  isArchived      Boolean   @default(false) @map("is_archived")
-  externalEntityId Int?     @map("external_entity_id")
-  name            String
-  descr           String?
-  state           String?
-  user            User      @relation(fields: [userId], references: [id])
-  externalEntity  ExternalEntity? @relation(fields: [externalEntityId], references: [id])
-  fromTransactions Transaction[] @relation("FromWallet")
-  toTransactions  Transaction[] @relation("ToWallet")
-  fromTradeOrders TradeOrder[] @relation("FromWallet")
-  toTradeOrders   TradeOrder[] @relation("ToWallet")
+  id               Int             @id @default(autoincrement())
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+  deletedAt        DateTime?       @map("deleted_at")
+  userId           Int             @map("user_id")
+  isArchived       Boolean         @default(false) @map("is_archived")
+  externalEntityId Int?            @map("external_entity_id")
+  name             String
+  descr            String?
+  state            String?
+  toTradeOrders    TradeOrder[]    @relation("ToWallet")
+  fromTradeOrders  TradeOrder[]    @relation("FromWallet")
+  toTransactions   Transaction[]   @relation("ToWallet")
+  fromTransactions Transaction[]   @relation("FromWallet")
+  externalEntity   ExternalEntity? @relation(fields: [externalEntityId], references: [id])
+  user             User            @relation(fields: [userId], references: [id])
 }
 
 model ExternalEntity {
-  id            Int       @id @default(autoincrement())
-  trademarkName String    @unique @map("trademark_name")
-  type          String    // ENUM('CREX', 'DEX', 'WCST', 'WNCS', 'EXCH', 'BRCR')
+  id            Int      @id @default(autoincrement())
+  trademarkName String   @unique @map("trademark_name")
+  type          String
   wallets       Wallet[]
-} 
+}
