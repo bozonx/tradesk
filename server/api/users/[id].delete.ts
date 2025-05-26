@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    return { message: 'Пользователь успешно удален' }
+    return { message: 'User deleted successfully' }
   } catch (error) {
     const err = error as H3Error
     if (err.statusCode) throw error

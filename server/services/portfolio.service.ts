@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import { z } from 'zod'
 import { createPortfolioSchema, updatePortfolioSchema } from '../schemas/portfolio.schema'
+import { createError } from 'h3'
 
 const prisma = new PrismaClient()
 
@@ -10,51 +11,153 @@ export class PortfolioService {
     return prisma.portfolio.findMany({
       where: {
         userId,
-        deletedAt: null
+        deletedAt: null,
+        isArchived: false
       },
       include: {
-        positions: true
+        positions: {
+          where: {
+            deletedAt: null
+          }
+        }
       }
     })
   }
 
   // Получить портфолио по ID
   async getPortfolioById(id: number) {
-    return prisma.portfolio.findUnique({
-      where: { id },
+    return prisma.portfolio.findFirst({
+      where: { 
+        id,
+        deletedAt: null
+      },
       include: {
-        positions: true
+        positions: {
+          where: {
+            deletedAt: null
+          }
+        }
       }
     })
   }
 
   // Создать новое портфолио
   async createPortfolio(data: z.infer<typeof createPortfolioSchema>) {
+    // Проверяем валидность данных
+    const validatedData = createPortfolioSchema.parse(data)
+
+    // Проверяем существование пользователя
+    const user = await prisma.user.findFirst({
+      where: { 
+        id: validatedData.userId,
+        deletedAt: null
+      }
+    })
+    if (!user) {
+      throw createError({
+        statusCode: 400,
+        message: 'User not found'
+      })
+    }
+
+    // Проверяем уникальность имени для пользователя
+    const existingPortfolio = await prisma.portfolio.findFirst({
+      where: {
+        userId: validatedData.userId,
+        name: validatedData.name,
+        deletedAt: null
+      }
+    })
+    if (existingPortfolio) {
+      throw createError({
+        statusCode: 400,
+        message: 'Portfolio with this name already exists'
+      })
+    }
+
     return prisma.portfolio.create({
-      data,
+      data: validatedData,
       include: {
-        positions: true
+        positions: {
+          where: {
+            deletedAt: null
+          }
+        }
       }
     })
   }
 
   // Обновить портфолио
   async updatePortfolio(id: number, data: z.infer<typeof updatePortfolioSchema>) {
+    // Проверяем валидность данных
+    const validatedData = updatePortfolioSchema.parse(data)
+
+    // Проверяем существование портфолио
+    const portfolio = await prisma.portfolio.findFirst({
+      where: { 
+        id,
+        deletedAt: null
+      }
+    })
+    if (!portfolio) {
+      return null
+    }
+
+    // Если обновляется имя, проверяем уникальность
+    if (validatedData.name) {
+      const existingPortfolio = await prisma.portfolio.findFirst({
+        where: {
+          userId: portfolio.userId,
+          name: validatedData.name,
+          id: { not: id },
+          deletedAt: null
+        }
+      })
+      if (existingPortfolio) {
+        throw createError({
+          statusCode: 400,
+          message: 'Portfolio with this name already exists'
+        })
+      }
+    }
+
     return prisma.portfolio.update({
       where: { id },
-      data,
+      data: validatedData,
       include: {
-        positions: true
+        positions: {
+          where: {
+            deletedAt: null
+          }
+        }
       }
     })
   }
 
   // Удалить портфолио (soft delete)
   async deletePortfolio(id: number) {
+    // Проверяем существование портфолио
+    const portfolio = await prisma.portfolio.findFirst({
+      where: { 
+        id,
+        deletedAt: null
+      }
+    })
+    if (!portfolio) {
+      return null
+    }
+
     return prisma.portfolio.update({
       where: { id },
       data: {
         deletedAt: new Date()
+      },
+      include: {
+        positions: {
+          where: {
+            deletedAt: null
+          }
+        }
       }
     })
   }
