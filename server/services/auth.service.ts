@@ -17,38 +17,39 @@ export class AuthService {
 
   // Регистрация нового пользователя
   async register(data: z.infer<typeof createUserSchema>) {
-    const existingUser = await this.userService.getUserByEmail(data.email)
-    
-    if (existingUser) {
-      throw createError({
-        statusCode: 400,
-        message: 'User already exists'
+    try {
+      // Хешируем пароль
+      const hashedPassword = await bcrypt.hash(data.password, 10)
+      const user = await this.userService.createUser({
+        ...data,
+        password: hashedPassword
       })
-    }
-
-    // Хешируем пароль
-    const hashedPassword = await bcrypt.hash(data.password, 10)
-    const user = await this.userService.createUser({
-      ...data,
-      password: hashedPassword
-    })
-    
-    // Генерируем JWT токен
-    const token = jwt.sign(
-      { userId: user.id },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRES_IN }
-    )
-    
-    return {
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        settings: user.settings
+      
+      // Генерируем JWT токен
+      const token = jwt.sign(
+        { userId: user.id },
+        JWT_SECRET,
+        { expiresIn: JWT_EXPIRES_IN }
+      )
+      
+      return {
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          settings: user.settings
+        }
       }
+    } catch (error: any) {
+      if (error.statusCode === 400 && error.message === 'User already exists') {
+        throw error
+      }
+      throw createError({
+        statusCode: 500,
+        message: 'Registration failed'
+      })
     }
   }
 
