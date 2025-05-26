@@ -60,12 +60,16 @@ export class PortfolioService {
       })
     }
 
-    // Проверяем уникальность имени для пользователя
+    // Проверяем уникальность имени для пользователя (только для активных и неархивированных портфолио)
     const existingPortfolio = await prisma.portfolio.findFirst({
       where: {
         userId: validatedData.userId,
         name: validatedData.name,
-        deletedAt: null
+        isArchived: false,
+        OR: [
+          { deletedAt: null },
+          { deletedAt: { gt: new Date() } } // Учитываем только недавно удаленные портфолио
+        ]
       }
     })
     if (existingPortfolio) {
@@ -103,14 +107,15 @@ export class PortfolioService {
       return null
     }
 
-    // Если обновляется имя, проверяем уникальность
+    // Если обновляется имя, проверяем уникальность (только для активных и неархивированных портфолио)
     if (validatedData.name) {
       const existingPortfolio = await prisma.portfolio.findFirst({
         where: {
           userId: portfolio.userId,
           name: validatedData.name,
           id: { not: id },
-          deletedAt: null
+          deletedAt: null,
+          isArchived: false
         }
       })
       if (existingPortfolio) {

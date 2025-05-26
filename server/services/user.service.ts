@@ -64,18 +64,33 @@ export class UserService {
   // Создать нового пользователя
   async createUser(data: z.infer<typeof createUserSchema>): Promise<UserWithPassword> {
     try {
-      const user = await this.prisma.user.create({
-        data
+      // Проверяем, существует ли пользователь
+      const existingUser = await this.prisma.user.findFirst({
+        where: { 
+          email: data.email,
+          deletedAt: null
+        }
       })
-      return user
-    } catch (error: any) {
-      if (error.code === 'P2002') {
+      if (existingUser) {
         throw createError({
           statusCode: 400,
           message: 'User already exists'
         })
       }
-      throw error
+
+      const user = await this.prisma.user.create({
+        data
+      })
+      return user
+    } catch (error: any) {
+      if (error.statusCode === 400) {
+        throw error
+      }
+      console.error('Error creating user:', error)
+      throw createError({
+        statusCode: 500,
+        message: 'Failed to create user'
+      })
     }
   }
 

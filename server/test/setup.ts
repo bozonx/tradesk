@@ -17,7 +17,9 @@ beforeAll(async () => {
 
 // Очистка базы данных перед каждым тестом
 beforeEach(async () => {
-  if (!prisma) return
+  if (!prisma) {
+    throw new Error('Prisma client is not initialized')
+  }
 
   try {
     // Отключаем внешние ключи для очистки
@@ -25,17 +27,29 @@ beforeEach(async () => {
 
     // Очищаем таблицы в правильном порядке (сначала зависимые)
     await prisma.$transaction(async (tx) => {
-      await tx.$executeRaw`DELETE FROM "Transaction"`
-      await tx.$executeRaw`DELETE FROM "TradeOrder"`
-      await tx.$executeRaw`DELETE FROM "Position"`
-      await tx.$executeRaw`DELETE FROM "Portfolio"`
-      await tx.$executeRaw`DELETE FROM "Strategy"`
-      await tx.$executeRaw`DELETE FROM "Wallet"`
-      await tx.$executeRaw`DELETE FROM "Session"`
-      await tx.$executeRaw`DELETE FROM "User"`
-      await tx.$executeRaw`DELETE FROM "Group"`
-      await tx.$executeRaw`DELETE FROM "Asset"`
-      await tx.$executeRaw`DELETE FROM "ExternalEntity"`
+      try {
+        // Сначала удаляем все записи из зависимых таблиц
+        await tx.$executeRaw`DELETE FROM "Transaction"`
+        await tx.$executeRaw`DELETE FROM "TradeOrder"`
+        await tx.$executeRaw`DELETE FROM "Position"`
+        await tx.$executeRaw`DELETE FROM "Portfolio"`
+        await tx.$executeRaw`DELETE FROM "Strategy"`
+        await tx.$executeRaw`DELETE FROM "Wallet"`
+        await tx.$executeRaw`DELETE FROM "Session"`
+        await tx.$executeRaw`DELETE FROM "User"`
+        await tx.$executeRaw`DELETE FROM "Group"`
+        await tx.$executeRaw`DELETE FROM "Asset"`
+        await tx.$executeRaw`DELETE FROM "ExternalEntity"`
+
+        // Сбрасываем автоинкремент для всех таблиц
+        await tx.$executeRaw`DELETE FROM sqlite_sequence WHERE name IN (
+          'Transaction', 'TradeOrder', 'Position', 'Portfolio', 'Strategy',
+          'Wallet', 'Session', 'User', 'Group', 'Asset', 'ExternalEntity'
+        )`
+      } catch (error) {
+        console.error('Error in transaction:', error)
+        throw error
+      }
     })
 
     // Включаем внешние ключи обратно

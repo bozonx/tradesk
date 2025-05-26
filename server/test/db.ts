@@ -4,7 +4,7 @@ import fs from 'fs'
 import path from 'path'
 
 // Путь к тестовой базе данных
-const TEST_DB_PATH = path.join(process.cwd(), 'test.db')
+const TEST_DB_PATH = path.join(process.cwd(), 'prisma/test.db')
 const SCHEMA_PATH = path.join(process.cwd(), 'prisma/schema.prisma')
 
 // Функция для создания тестовой базы данных
@@ -19,6 +19,11 @@ export async function setupTestDatabase() {
     const testPrisma = new PrismaClient({
       datasourceUrl: `file:${TEST_DB_PATH}`
     })
+
+    // Проверяем существование схемы
+    if (!fs.existsSync(SCHEMA_PATH)) {
+      throw new Error(`Schema file not found at ${SCHEMA_PATH}`)
+    }
 
     // Применяем миграции к тестовой базе
     execSync('npx prisma migrate deploy', {
@@ -39,6 +44,9 @@ export async function setupTestDatabase() {
     if (tables.length === 0) {
       throw new Error('No tables were created in the test database')
     }
+
+    // Проверяем подключение к базе
+    await testPrisma.$connect()
 
     return testPrisma
   } catch (error) {

@@ -2,7 +2,7 @@ import { defineConfig } from 'vitest/config'
 import path from 'path'
 
 // Путь к тестовой базе данных
-const TEST_DB_PATH = path.join(process.cwd(), 'test.db')
+const TEST_DB_PATH = path.join(process.cwd(), 'prisma/test.db')
 const SCHEMA_PATH = path.join(process.cwd(), 'prisma/schema.prisma')
 
 export default defineConfig({
