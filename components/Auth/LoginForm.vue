@@ -42,6 +42,7 @@ import { useAuthStore } from '~/stores/auth'
 
 const auth = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 
 // Состояние формы
 const form = ref({
@@ -81,7 +82,11 @@ async function handleSubmit() {
     }
 
     auth.setAuth(mockResponse.user, mockResponse.token)
-    router.push('/')
+    
+    // Получаем URL для редиректа из query параметров
+    const redirectTo = route.query.redirect as string
+    // Если есть URL для редиректа, переходим на него, иначе на главную
+    router.push(redirectTo || '/')
   } catch (error: any) {
     // Обработка ошибок
     if (error.data?.errors) {

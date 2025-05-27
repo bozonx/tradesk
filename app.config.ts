@@ -14,5 +14,10 @@ export default defineAppConfig({
     timeout: 30000,
     // Версия API
     version: 'v1'
+  },
+  // Глобальные настройки для всех страниц
+  pages: {
+    // Применяем middleware auth ко всем страницам по умолчанию
+    middleware: ['auth']
   }
 }) 
