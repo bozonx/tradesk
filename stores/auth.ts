@@ -1,5 +1,4 @@
 import { defineStore } from 'pinia'
-import { useStorage } from '@vueuse/core'
 
 interface User {
   id: string
@@ -27,15 +26,16 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
-    // Установка данных пользователя
-    setUser(user: User | null) {
+    // Установка данных пользователя после успешной авторизации
+    setAuth(user: User, token: string) {
       this.user = user
-      this.isAuthenticated = !!user
-    },
-
-    // Установка токена
-    setToken(token: string | null) {
       this.token = token
+      this.isAuthenticated = true
+      
+      // Сохраняем токен в localStorage
+      if (process.client) {
+        localStorage.setItem('auth_token', token)
+      }
     },
 
     // Выход из системы
@@ -43,10 +43,30 @@ export const useAuthStore = defineStore('auth', {
       this.user = null
       this.token = null
       this.isAuthenticated = false
-    }
-  },
+      
+      if (process.client) {
+        localStorage.removeItem('auth_token')
+      }
+    },
 
-  persist: {
-    storage: persistedState.localStorage
+    // Проверка авторизации при загрузке приложения
+    async checkAuth() {
+      if (!process.client) return false
+      
+      const token = localStorage.getItem('auth_token')
+      if (!token) return false
+
+      try {
+        // Здесь можно добавить запрос к API для проверки токена
+        // const response = await $fetch('/api/auth/verify', {
+        //   headers: { Authorization: `Bearer ${token}` }
+        // })
+        // this.setAuth(response.user, token)
+        return true
+      } catch (error) {
+        this.logout()
+        return false
+      }
+    }
   }
 }) 

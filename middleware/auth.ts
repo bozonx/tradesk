@@ -1,13 +1,13 @@
 export default defineNuxtRouteMiddleware((to) => {
-  const authStore = useAuthStore()
+  const auth = useAuthStore()
   
-  // Если пользователь не аутентифицирован и пытается получить доступ к защищенному маршруту
-  if (!authStore.getIsAuthenticated && to.path !== '/auth/login') {
-    return navigateTo('/auth/login')
+  // Если пользователь не авторизован и пытается получить доступ к защищенному роуту
+  if (!auth.isAuthenticated && to.path !== '/login') {
+    return navigateTo('/login')
   }
   
-  // Если пользователь аутентифицирован и пытается получить доступ к страницам авторизации
-  if (authStore.getIsAuthenticated && to.path.startsWith('/auth/')) {
+  // Если пользователь авторизован и пытается получить доступ к странице логина
+  if (auth.isAuthenticated && to.path === '/login') {
     return navigateTo('/')
   }
 }) 

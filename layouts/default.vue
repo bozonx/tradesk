@@ -15,7 +15,7 @@
         />
         <UButton
           v-if="!isAuthenticated"
-          to="/auth/login"
+          to="/login"
           color="primary"
           variant="solid"
         >

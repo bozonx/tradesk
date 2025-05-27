@@ -5,5 +5,12 @@
 </template>
 
 <script setup lang="ts">
-// Корневой компонент приложения
+import { useAuthStore } from '~/stores/auth'
+
+const auth = useAuthStore()
+
+// Проверяем авторизацию при загрузке приложения
+onMounted(async () => {
+  await auth.checkAuth()
+})
 </script> 
