@@ -37,8 +37,8 @@ CREATE TABLE "Portfolio" (
     "name" TEXT NOT NULL,
     "descr" TEXT,
     "state" TEXT,
-    CONSTRAINT "Portfolio_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT "Portfolio_group_id_fkey" FOREIGN KEY ("group_id") REFERENCES "Group" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+    CONSTRAINT "Portfolio_group_id_fkey" FOREIGN KEY ("group_id") REFERENCES "Group" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT "Portfolio_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -53,10 +53,10 @@ CREATE TABLE "Position" (
     "portfolio_id" INTEGER,
     "strategy_id" INTEGER,
     "descr" TEXT,
-    CONSTRAINT "Position_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT "Position_group_id_fkey" FOREIGN KEY ("group_id") REFERENCES "Group" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT "Position_strategy_id_fkey" FOREIGN KEY ("strategy_id") REFERENCES "Strategy" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
     CONSTRAINT "Position_portfolio_id_fkey" FOREIGN KEY ("portfolio_id") REFERENCES "Portfolio" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT "Position_strategy_id_fkey" FOREIGN KEY ("strategy_id") REFERENCES "Strategy" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+    CONSTRAINT "Position_group_id_fkey" FOREIGN KEY ("group_id") REFERENCES "Group" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT "Position_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -80,15 +80,15 @@ CREATE TABLE "Transaction" (
     "to_asset_id" INTEGER NOT NULL,
     "toValue" DECIMAL NOT NULL,
     "note" TEXT,
-    CONSTRAINT "Transaction_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT "Transaction_position_id_fkey" FOREIGN KEY ("position_id") REFERENCES "Position" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT "Transaction_partial_of_id_fkey" FOREIGN KEY ("partial_of_id") REFERENCES "Transaction" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT "Transaction_fee_of_id_fkey" FOREIGN KEY ("fee_of_id") REFERENCES "Transaction" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT "Transaction_trade_order_id_fkey" FOREIGN KEY ("trade_order_id") REFERENCES "TradeOrder" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT "Transaction_from_wallet_id_fkey" FOREIGN KEY ("from_wallet_id") REFERENCES "Wallet" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT "Transaction_to_wallet_id_fkey" FOREIGN KEY ("to_wallet_id") REFERENCES "Wallet" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT "Transaction_to_asset_id_fkey" FOREIGN KEY ("to_asset_id") REFERENCES "Asset" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT "Transaction_from_asset_id_fkey" FOREIGN KEY ("from_asset_id") REFERENCES "Asset" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT "Transaction_to_asset_id_fkey" FOREIGN KEY ("to_asset_id") REFERENCES "Asset" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    CONSTRAINT "Transaction_to_wallet_id_fkey" FOREIGN KEY ("to_wallet_id") REFERENCES "Wallet" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT "Transaction_from_wallet_id_fkey" FOREIGN KEY ("from_wallet_id") REFERENCES "Wallet" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT "Transaction_trade_order_id_fkey" FOREIGN KEY ("trade_order_id") REFERENCES "TradeOrder" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT "Transaction_fee_of_id_fkey" FOREIGN KEY ("fee_of_id") REFERENCES "Transaction" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT "Transaction_partial_of_id_fkey" FOREIGN KEY ("partial_of_id") REFERENCES "Transaction" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT "Transaction_position_id_fkey" FOREIGN KEY ("position_id") REFERENCES "Position" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT "Transaction_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -103,8 +103,8 @@ CREATE TABLE "Strategy" (
     "name" TEXT NOT NULL,
     "descr" TEXT,
     "state" TEXT,
-    CONSTRAINT "Strategy_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT "Strategy_group_id_fkey" FOREIGN KEY ("group_id") REFERENCES "Group" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+    CONSTRAINT "Strategy_group_id_fkey" FOREIGN KEY ("group_id") REFERENCES "Group" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT "Strategy_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -147,12 +147,12 @@ CREATE TABLE "TradeOrder" (
     "note" TEXT,
     "data" TEXT,
     "position_id" INTEGER,
-    CONSTRAINT "TradeOrder_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT "TradeOrder_position_id_fkey" FOREIGN KEY ("position_id") REFERENCES "Position" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT "TradeOrder_from_wallet_id_fkey" FOREIGN KEY ("from_wallet_id") REFERENCES "Wallet" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT "TradeOrder_to_wallet_id_fkey" FOREIGN KEY ("to_wallet_id") REFERENCES "Wallet" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT "TradeOrder_to_asset_id_fkey" FOREIGN KEY ("to_asset_id") REFERENCES "Asset" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT "TradeOrder_from_asset_id_fkey" FOREIGN KEY ("from_asset_id") REFERENCES "Asset" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT "TradeOrder_to_asset_id_fkey" FOREIGN KEY ("to_asset_id") REFERENCES "Asset" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    CONSTRAINT "TradeOrder_to_wallet_id_fkey" FOREIGN KEY ("to_wallet_id") REFERENCES "Wallet" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT "TradeOrder_from_wallet_id_fkey" FOREIGN KEY ("from_wallet_id") REFERENCES "Wallet" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT "TradeOrder_position_id_fkey" FOREIGN KEY ("position_id") REFERENCES "Position" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT "TradeOrder_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -167,8 +167,8 @@ CREATE TABLE "Wallet" (
     "name" TEXT NOT NULL,
     "descr" TEXT,
     "state" TEXT,
-    CONSTRAINT "Wallet_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT "Wallet_external_entity_id_fkey" FOREIGN KEY ("external_entity_id") REFERENCES "ExternalEntity" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+    CONSTRAINT "Wallet_external_entity_id_fkey" FOREIGN KEY ("external_entity_id") REFERENCES "ExternalEntity" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT "Wallet_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 -- CreateTable

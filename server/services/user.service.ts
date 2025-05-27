@@ -3,15 +3,16 @@ import type { User } from '@prisma/client'
 import { z } from 'zod'
 import { createUserSchema, updateUserSchema } from '../schemas/user.schema'
 import { createError } from 'h3'
+import bcrypt from 'bcryptjs'
 
 // Тип пользователя без пароля
 type UserWithoutPassword = Omit<User, 'password'>
 // Тип пользователя с паролем
 type UserWithPassword = User
 
-export class UserService {
-  private prisma: PrismaClient
+const prisma = new PrismaClient()
 
+export class UserService {
   constructor() {
     this.prisma = new PrismaClient()
   }
@@ -62,36 +63,16 @@ export class UserService {
   }
 
   // Создать нового пользователя
-  async createUser(data: z.infer<typeof createUserSchema>): Promise<UserWithPassword> {
-    try {
-      // Проверяем, существует ли пользователь
-      const existingUser = await this.prisma.user.findFirst({
-        where: { 
-          email: data.email,
-          deletedAt: null
-        }
-      })
-      if (existingUser) {
-        throw createError({
-          statusCode: 400,
-          message: 'User already exists'
-        })
+  async createUser(email: string, password: string, name: string): Promise<UserWithPassword> {
+    const hashedPassword = await bcrypt.hash(password, 10)
+    
+    return this.prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        name
       }
-
-      const user = await this.prisma.user.create({
-        data
-      })
-      return user
-    } catch (error: any) {
-      if (error.statusCode === 400) {
-        throw error
-      }
-      console.error('Error creating user:', error)
-      throw createError({
-        statusCode: 500,
-        message: 'Failed to create user'
-      })
-    }
+    })
   }
 
   // Обновить пользователя
@@ -168,5 +149,24 @@ export class UserService {
     } catch (error: any) {
       throw error
     }
+  }
+
+  // Поиск пользователя по email
+  async findByEmail(email: string) {
+    return this.prisma.user.findUnique({
+      where: { email }
+    })
+  }
+
+  // Проверка пароля
+  async verifyPassword(user: { password: string }, password: string) {
+    return bcrypt.compare(password, user.password)
+  }
+
+  // Получение пользователя по ID
+  async findById(id: string) {
+    return this.prisma.user.findUnique({
+      where: { id }
+    })
   }
 } 

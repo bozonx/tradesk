@@ -1,29 +1,32 @@
-import { AuthService } from '~/server/services/auth.service'
-import { createUserSchema } from '~/server/schemas/user.schema'
-import type { H3Error, ZodError } from '~/server/types/error'
+import type { H3Event } from 'h3'
+import { UserService } from '~/server/services/user.service'
 
-export default defineEventHandler(async (event) => {
-  try {
-    const body = await readBody(event)
-    const validatedData = createUserSchema.parse(body)
+export default defineEventHandler(async (event: H3Event) => {
+  const body = await readBody<{
+    email: string
+    password: string
+    name: string
+  }>(event)
 
-    const authService = new AuthService()
-    const result = await authService.register(validatedData)
+  const userService = new UserService()
 
-    return result
-  } catch (error) {
-    const err = error as H3Error | ZodError
-    if (err.name === 'ZodError') {
-      throw createError({
-        statusCode: 400,
-        message: 'Invalid user data',
-        data: (err as ZodError).errors
-      })
-    }
-    if (err.statusCode) throw error
+  // Проверяем, существует ли пользователь
+  const existingUser = await userService.findByEmail(body.email)
+  if (existingUser) {
     throw createError({
-      statusCode: 500,
-      message: 'Registration failed'
+      statusCode: 400,
+      message: 'User already exists'
     })
   }
+
+  // Создаем нового пользователя
+  const user = await userService.createUser(
+    body.email,
+    body.password,
+    body.name
+  )
+
+  // Возвращаем данные пользователя без пароля
+  const { password, ...userWithoutPassword } = user
+  return userWithoutPassword
 }) 

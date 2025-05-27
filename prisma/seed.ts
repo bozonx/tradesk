@@ -1,19 +1,21 @@
 import { PrismaClient } from '@prisma/client'
-const bcryptjs = require('bcryptjs')
+import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
 async function main() {
-  // Create test user
-  const hashedPassword = await bcryptjs.hash('test123', 10)
-  const user = await prisma.user.upsert({
+  // Создаем тестового пользователя
+  const hashedPassword = await bcrypt.hash('password123', 10)
+  
+  await prisma.user.upsert({
     where: { email: 'test@example.com' },
     update: {},
     create: {
       email: 'test@example.com',
       password: hashedPassword,
       name: 'Test User',
-    },
+      role: 'user'
+    }
   })
 
   // Create assets
@@ -100,7 +102,7 @@ async function main() {
       where: { id: 1 },
       update: {},
       create: {
-        userId: user.id,
+        userId: 1,
         name: 'Binance Spot',
         descr: 'Main spot trading wallet',
         externalEntityId: externalEntities[0].id,
@@ -111,7 +113,7 @@ async function main() {
       where: { id: 2 },
       update: {},
       create: {
-        userId: user.id,
+        userId: 1,
         name: 'MetaMask ETH',
         descr: 'Ethereum wallet',
         externalEntityId: externalEntities[1].id,
@@ -126,7 +128,7 @@ async function main() {
       where: { id: 1 },
       update: {},
       create: {
-        userId: user.id,
+        userId: 1,
         name: 'Main Portfolio',
         descr: 'Main trading portfolio',
         groupId: groups[0].id,
@@ -141,7 +143,7 @@ async function main() {
       where: { id: 1 },
       update: {},
       create: {
-        userId: user.id,
+        userId: 1,
         name: 'BTC/USDT Trading',
         descr: 'Bitcoin trading strategy',
         groupId: groups[1].id,
@@ -156,7 +158,7 @@ async function main() {
       where: { id: 1 },
       update: {},
       create: {
-        userId: user.id,
+        userId: 1,
         type: 'LONG',
         portfolioId: portfolios[0].id,
         strategyId: strategies[0].id,
@@ -171,7 +173,7 @@ async function main() {
       where: { id: 1 },
       update: {},
       create: {
-        userId: user.id,
+        userId: 1,
         fromWalletId: wallets[0].id,
         fromAssetId: assets[3].id, // USDT
         fromValue: 1000,
@@ -193,7 +195,7 @@ async function main() {
       where: { id: 1 },
       update: {},
       create: {
-        userId: user.id,
+        userId: 1,
         date: new Date(),
         positionId: positions[0].id,
         type: 'TRDE',
@@ -209,7 +211,7 @@ async function main() {
     }),
   ])
 
-  console.log('Seed data created successfully')
+  console.log('Database has been seeded.')
 }
 
 main()

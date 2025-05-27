@@ -51,8 +51,8 @@ model Portfolio {
   name       String
   descr      String?
   state      String?
-  group      Group?     @relation(fields: [groupId], references: [id])
   user       User       @relation(fields: [userId], references: [id])
+  group      Group?     @relation(fields: [groupId], references: [id])
   positions  Position[]
 }
 
@@ -67,10 +67,10 @@ model Position {
   portfolioId  Int?          @map("portfolio_id")
   strategyId   Int?          @map("strategy_id")
   descr        String?
-  strategy     Strategy?     @relation(fields: [strategyId], references: [id])
-  portfolio    Portfolio?    @relation(fields: [portfolioId], references: [id])
-  group        Group?        @relation(fields: [groupId], references: [id])
   user         User          @relation(fields: [userId], references: [id])
+  group        Group?        @relation(fields: [groupId], references: [id])
+  portfolio    Portfolio?    @relation(fields: [portfolioId], references: [id])
+  strategy     Strategy?     @relation(fields: [strategyId], references: [id])
   tradeOrders  TradeOrder[]
   transactions Transaction[]
 }
@@ -95,17 +95,17 @@ model Transaction {
   toAssetId           Int           @map("to_asset_id")
   toValue             Decimal
   note                String?
-  toAsset             Asset         @relation("ToAsset", fields: [toAssetId], references: [id])
-  fromAsset           Asset?        @relation("FromAsset", fields: [fromAssetId], references: [id])
-  toWallet            Wallet        @relation("ToWallet", fields: [toWalletId], references: [id])
-  fromWallet          Wallet?       @relation("FromWallet", fields: [fromWalletId], references: [id])
-  tradeOrder          TradeOrder?   @relation(fields: [tradeOrderId], references: [id])
-  feeOf               Transaction?  @relation("FeeTransactions", fields: [feeOfId], references: [id])
-  feeTransactions     Transaction[] @relation("FeeTransactions")
+  user                User          @relation(fields: [userId], references: [id])
+  position            Position?     @relation(fields: [positionId], references: [id])
   partialOf           Transaction?  @relation("PartialTransactions", fields: [partialOfId], references: [id])
   partialTransactions Transaction[] @relation("PartialTransactions")
-  position            Position?     @relation(fields: [positionId], references: [id])
-  user                User          @relation(fields: [userId], references: [id])
+  feeOf               Transaction?  @relation("FeeTransactions", fields: [feeOfId], references: [id])
+  feeTransactions     Transaction[] @relation("FeeTransactions")
+  tradeOrder          TradeOrder?   @relation(fields: [tradeOrderId], references: [id])
+  fromWallet          Wallet?       @relation("FromWallet", fields: [fromWalletId], references: [id])
+  toWallet            Wallet        @relation("ToWallet", fields: [toWalletId], references: [id])
+  fromAsset           Asset?        @relation("FromAsset", fields: [fromAssetId], references: [id])
+  toAsset             Asset         @relation("ToAsset", fields: [toAssetId], references: [id])
 }
 
 model Strategy {
@@ -120,8 +120,8 @@ model Strategy {
   descr      String?
   state      String?
   positions  Position[]
-  group      Group?     @relation(fields: [groupId], references: [id])
   user       User       @relation(fields: [userId], references: [id])
+  group      Group?     @relation(fields: [groupId], references: [id])
 }
 
 model Group {
@@ -138,10 +138,10 @@ model Asset {
   id               Int           @id @default(autoincrement())
   ticker           String        @unique
   type             String
-  toTradeOrders    TradeOrder[]  @relation("ToAsset")
   fromTradeOrders  TradeOrder[]  @relation("FromAsset")
-  toTransactions   Transaction[] @relation("ToAsset")
+  toTradeOrders    TradeOrder[]  @relation("ToAsset")
   fromTransactions Transaction[] @relation("FromAsset")
+  toTransactions   Transaction[] @relation("ToAsset")
 }
 
 model TradeOrder {
@@ -168,12 +168,12 @@ model TradeOrder {
   note           String?
   data           String?
   positionId     Int?          @map("position_id")
-  toAsset        Asset         @relation("ToAsset", fields: [toAssetId], references: [id])
-  fromAsset      Asset         @relation("FromAsset", fields: [fromAssetId], references: [id])
-  toWallet       Wallet        @relation("ToWallet", fields: [toWalletId], references: [id])
-  fromWallet     Wallet        @relation("FromWallet", fields: [fromWalletId], references: [id])
-  position       Position?     @relation(fields: [positionId], references: [id])
   user           User          @relation(fields: [userId], references: [id])
+  position       Position?     @relation(fields: [positionId], references: [id])
+  fromWallet     Wallet        @relation("FromWallet", fields: [fromWalletId], references: [id])
+  toWallet       Wallet        @relation("ToWallet", fields: [toWalletId], references: [id])
+  fromAsset      Asset         @relation("FromAsset", fields: [fromAssetId], references: [id])
+  toAsset        Asset         @relation("ToAsset", fields: [toAssetId], references: [id])
   transactions   Transaction[]
 }
 
@@ -188,12 +188,12 @@ model Wallet {
   name             String
   descr            String?
   state            String?
-  toTradeOrders    TradeOrder[]    @relation("ToWallet")
   fromTradeOrders  TradeOrder[]    @relation("FromWallet")
-  toTransactions   Transaction[]   @relation("ToWallet")
+  toTradeOrders    TradeOrder[]    @relation("ToWallet")
   fromTransactions Transaction[]   @relation("FromWallet")
-  externalEntity   ExternalEntity? @relation(fields: [externalEntityId], references: [id])
+  toTransactions   Transaction[]   @relation("ToWallet")
   user             User            @relation(fields: [userId], references: [id])
+  externalEntity   ExternalEntity? @relation(fields: [externalEntityId], references: [id])
 }
 
 model ExternalEntity {

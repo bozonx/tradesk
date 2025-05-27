@@ -1,52 +1,35 @@
-import { defineEventHandler, getRequestHeader, createError } from 'h3'
-import { verifyToken } from '~/server/utils/jwt'
+import { defineEventHandler, getRequestHeader, createError, getRequestURL, getHeader } from 'h3'
+import jwt from 'jsonwebtoken'
+import { isPublicRoute } from '~/config/routes'
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event: H3Event) => {
+  const path = getRequestURL(event).pathname
 
-
-  return
-
-  // Пропускаем проверку для публичных маршрутов
-  const publicRoutes = ['/api/auth/login', '/api/auth/register']
-  if (publicRoutes.some(route => event.path === route)) {
-    console.log('Skipping auth check for public route:', event.path)
+  // Пропускаем публичные маршруты
+  if (isPublicRoute(path)) {
     return
   }
 
-  // Получаем заголовок авторизации
-  const authHeader = event.node.req.headers.authorization
-  if (!authHeader) {
-    console.log('No authorization header found')
-    throw createError({
-      statusCode: 401,
-      message: 'Authorization header is required'
-    })
-  }
+  // Получаем токен из заголовка
+  const token = getHeader(event, 'Authorization')?.replace('Bearer ', '')
 
-  // Проверяем формат токена
-  const [type, token] = authHeader.split(' ')
-  if (type !== 'Bearer' || !token) {
-    console.log('Invalid authorization header format:', authHeader)
+  if (!token) {
     throw createError({
       statusCode: 401,
-      message: 'Invalid authorization header format'
+      message: 'Authentication required'
     })
   }
 
   try {
     // Проверяем токен
-    const decoded = await verifyToken(token)
-    console.log('Token verified successfully:', decoded)
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key')
     
     // Добавляем информацию о пользователе в контекст запроса
-    event.context.auth = {
-      user: decoded
-    }
+    event.context.auth = decoded
   } catch (error) {
-    console.error('Token verification failed:', error)
     throw createError({
       statusCode: 401,
-      message: 'Invalid or expired token'
+      message: 'Invalid token'
     })
   }
 }) 
