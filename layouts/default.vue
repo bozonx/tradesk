@@ -1,61 +1,37 @@
 <template>
-  <div :class="['min-h-screen transition-colors duration-200', colorMode.value === 'dark' ? 'dark' : '']">
-    <!-- Навигационная панель -->
-    <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800">
-      <NuxtLink to="/" class="text-xl font-bold text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200">
-        TradeSk
-      </NuxtLink>
-      <div class="flex items-center gap-2">
-        <UButton
-          :icon="colorMode.value === 'dark' ? 'i-heroicons-sun-20-solid' : 'i-heroicons-moon-20-solid'"
-          color="gray"
-          variant="ghost"
-          class="text-gray-700 dark:text-gray-200 hover:text-primary-600 dark:hover:text-primary-400"
-          @click="toggleColorMode"
-        />
-        <UButton
-          v-if="!isAuthenticated"
-          to="/login"
-          color="primary"
-          variant="solid"
-        >
-          Login
-        </UButton>
-        <UButton
-          v-else
-          color="red"
-          variant="soft"
-          @click="handleLogout"
-        >
-          Logout
-        </UButton>
-      </div>
-    </div>
-
-    <!-- Основной контент -->
-    <main class="container mx-auto px-4 py-8">
+  <v-app>
+    <v-main>
       <slot />
-    </main>
-  </div>
+    </v-main>
+  </v-app>
 </template>
 
 <script setup lang="ts">
-// Управление цветовой темой
+// Инициализация темы при загрузке приложения
 const colorMode = useColorMode()
+const vuetify = useVuetify()
 
-const toggleColorMode = () => {
-  // Принудительно переключаем тему
-  colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
-  // Обновляем значение
-  colorMode.value = colorMode.preference
+// Синхронизация темы Vuetify с системной темой
+watch(() => colorMode.value, (newValue) => {
+  vuetify.theme.global.name.value = newValue
+}, { immediate: true })
+</script>
+
+<style>
+/* Глобальные стили */
+.v-application {
+  font-family: 'Inter', sans-serif;
 }
 
-// Состояние аутентификации (заглушка)
-const isAuthenticated = ref(false)
-
-// Обработчик выхода
-const handleLogout = () => {
-  // TODO: Реализовать логику выхода
-  isAuthenticated.value = false
+/* Стили для темной темы */
+.dark {
+  background-color: rgb(18, 18, 18);
+  color: rgb(255, 255, 255);
 }
-</script> 
+
+/* Стили для светлой темы */
+.light {
+  background-color: rgb(255, 255, 255);
+  color: rgb(0, 0, 0);
+}
+</style> 

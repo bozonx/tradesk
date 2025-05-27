@@ -3,10 +3,10 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: [
     '@nuxtjs/tailwindcss',
-    '@nuxt/ui',
-    '@nuxtjs/color-mode',
     '@pinia/nuxt',
-    'nuxt-icon'
+    '@nuxtjs/color-mode',
+    'vuetify-nuxt-module',
+    '@nuxtjs/i18n',
   ],
   tailwindcss: {
     cssPath: '~/assets/css/tailwind.css',
@@ -15,32 +15,55 @@ export default defineNuxtConfig({
     viewer: true,
   },
   colorMode: {
+    classSuffix: '',
     preference: 'system',
     fallback: 'light',
-    classSuffix: '',
-    storageKey: 'nuxt-color-mode',
-    globalName: '__NUXT_COLOR_MODE__',
-    componentName: 'ColorScheme',
-    classPrefix: '',
-    dataValue: 'theme',
-    forced: false
   },
-  ui: {
-    global: true,
-    icons: ['heroicons', 'simple-icons'],
-    notifications: {
-      position: 'top-right'
-    }
+  vuetify: {
+    vuetifyOptions: {
+      theme: {
+        defaultTheme: 'light',
+        themes: {
+          light: {
+            colors: {
+              primary: '#1976d2',
+              secondary: '#424242',
+              accent: '#82B1FF',
+              error: '#FF5252',
+              info: '#2196F3',
+              success: '#4CAF50',
+              warning: '#FFC107',
+            },
+          },
+          dark: {
+            colors: {
+              primary: '#2196f3',
+              secondary: '#757575',
+              accent: '#82B1FF',
+              error: '#CF6679',
+              info: '#2196F3',
+              success: '#4CAF50',
+              warning: '#FFC107',
+            },
+          },
+        },
+      },
+    },
+    moduleOptions: {
+      styles: { configFile: 'assets/styles/vuetify.scss' },
+      icons: {
+        defaultSet: 'mdi',
+      },
+    },
   },
   app: {
     head: {
-      title: 'TradeSk',
+      title: 'Tradesk',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'description', content: 'TradeSk - Your Trading Platform' }
-      ]
-    }
+      ],
+    },
   },
   nitro: {
     routeRules: {
@@ -63,7 +86,7 @@ export default defineNuxtConfig({
     
     // Публичные ключи, доступные на клиенте
     public: {
-      apiBase: process.env.API_BASE || '/api'
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || '/api'
     }
   },
   compatibilityDate: '2024-04-03',

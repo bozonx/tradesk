@@ -14,9 +14,12 @@ export default defineNuxtRouteMiddleware((to) => {
   }
   
   // Если пользователь не авторизован и пытается получить доступ к защищенному маршруту
-  if (!auth.isAuthenticated) {
-    // Сохраняем URL, на который пытался перейти пользователь
-    const redirectTo = encodeURIComponent(to.fullPath)
-    return navigateTo(`/login?redirect=${redirectTo}`)
+  if (!auth.isAuthenticated && to.path !== '/login') {
+    return navigateTo('/login')
+  }
+  
+  // Если пользователь авторизован и пытается получить доступ к странице логина
+  if (auth.isAuthenticated && to.path === '/login') {
+    return navigateTo('/')
   }
 }) 
