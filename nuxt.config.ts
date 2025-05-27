@@ -2,20 +2,22 @@
 export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: [
+    '@nuxtjs/tailwindcss',
     '@nuxt/ui',
     '@nuxtjs/color-mode',
     '@pinia/nuxt',
-    'nuxt-icon',
-    '@nuxtjs/tailwindcss'
+    'nuxt-icon'
   ],
+  tailwindcss: {
+    cssPath: '~/assets/css/tailwind.css',
+    configPath: 'tailwind.config.ts',
+    exposeConfig: false,
+    viewer: true,
+  },
   colorMode: {
     preference: 'system',
     fallback: 'light',
     classSuffix: ''
-  },
-  ui: {
-    global: true,
-    icons: ['heroicons']
   },
   app: {
     head: {
@@ -54,8 +56,5 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-04-03',
   typescript: {
     strict: true
-  },
-  css: [
-    '~/assets/css/tailwind.css'
-  ]
+  }
 })
