@@ -1,5 +1,6 @@
 ---
 description: 
 globs: 
-alwaysApply: false
+alwaysApply: true
 ---
+- заполняй "Project progress.md" и вноси туда изменения в кратце
