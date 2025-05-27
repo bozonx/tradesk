@@ -1,44 +1,56 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
-    <UHeader>
-      <template #left>
-        <NuxtLink to="/" class="text-xl font-bold">TradeSk</NuxtLink>
-      </template>
-      
-      <template #right>
+    <!-- Навигационная панель -->
+    <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800">
+      <NuxtLink to="/" class="text-xl font-bold">
+        TradeSk
+      </NuxtLink>
+      <div class="flex items-center gap-2">
         <UButton
-          :icon="colorMode.value === 'dark' ? 'i-heroicons-moon' : 'i-heroicons-sun'"
+          icon="i-heroicons-moon-20-solid"
           color="gray"
           variant="ghost"
           @click="toggleColorMode"
         />
         <UButton
-          icon="i-heroicons-user"
-          color="gray"
-          variant="ghost"
-          to="/profile"
-        />
-      </template>
-    </UHeader>
+          v-if="!isAuthenticated"
+          to="/auth/login"
+          color="primary"
+          variant="solid"
+        >
+          Login
+        </UButton>
+        <UButton
+          v-else
+          color="red"
+          variant="soft"
+          @click="handleLogout"
+        >
+          Logout
+        </UButton>
+      </div>
+    </div>
 
+    <!-- Основной контент -->
     <main class="container mx-auto px-4 py-8">
       <slot />
     </main>
-
-    <UFooter>
-      <template #left>
-        <span class="text-sm text-gray-500">© 2024 TradeSk. All rights reserved.</span>
-      </template>
-    </UFooter>
   </div>
 </template>
 
 <script setup lang="ts">
-// Используем встроенный composable для управления цветовой темой
+// Управление цветовой темой
 const colorMode = useColorMode()
-
-// Функция для переключения темы
 const toggleColorMode = () => {
   colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
+}
+
+// Состояние аутентификации (заглушка)
+const isAuthenticated = ref(false)
+
+// Обработчик выхода
+const handleLogout = () => {
+  // TODO: Реализовать логику выхода
+  isAuthenticated.value = false
 }
 </script> 

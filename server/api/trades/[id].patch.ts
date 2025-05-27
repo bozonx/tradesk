@@ -1,5 +1,5 @@
 import { TradeService } from '~/server/services/trade.service'
-import { updateTradeSchema } from '~/server/schemas/trade.schema'
+import { updateTradeOrderSchema } from '~/server/schemas/trade.schema'
 import type { H3Error, ZodError } from '~/server/types/error'
 
 export default defineEventHandler(async (event) => {
@@ -13,10 +13,10 @@ export default defineEventHandler(async (event) => {
     }
 
     const body = await readBody(event)
-    const validatedData = updateTradeSchema.partial().parse(body)
+    const validatedData = updateTradeOrderSchema.partial().parse(body)
 
     const tradeService = new TradeService()
-    const trade = await tradeService.updateTrade(id, validatedData)
+    const trade = await tradeService.updateTradeOrder(id, validatedData)
     
     if (!trade) {
       throw createError({

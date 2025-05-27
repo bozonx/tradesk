@@ -2,20 +2,20 @@
 export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: [
-    '@nuxtjs/tailwindcss',
-    '@pinia/nuxt',
+    '@nuxt/ui',
     '@nuxtjs/color-mode',
+    '@pinia/nuxt',
     'nuxt-icon',
-    '@nuxt/ui'
+    '@nuxtjs/tailwindcss'
   ],
   colorMode: {
-    classSuffix: '',
     preference: 'system',
-    fallback: 'light'
+    fallback: 'light',
+    classSuffix: ''
   },
   ui: {
     global: true,
-    icons: ['heroicons', 'simple-icons']
+    icons: ['heroicons']
   },
   app: {
     head: {
@@ -41,8 +41,21 @@ export default defineNuxtConfig({
     },
   },
   runtimeConfig: {
+    // Приватные ключи, доступные только на сервере
     jwtSecret: process.env.JWT_SECRET || 'your-secret-key',
     jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
     csrfSecret: process.env.CSRF_SECRET || 'your-csrf-secret',
+    
+    // Публичные ключи, доступные на клиенте
+    public: {
+      apiBase: process.env.API_BASE || '/api'
+    }
   },
+  compatibilityDate: '2024-04-03',
+  typescript: {
+    strict: true
+  },
+  css: [
+    '~/assets/css/tailwind.css'
+  ]
 })

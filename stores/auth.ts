@@ -1,68 +1,52 @@
 import { defineStore } from 'pinia'
+import { useStorage } from '@vueuse/core'
 
-// Определяем интерфейс для пользователя
 interface User {
   id: string
   email: string
   name: string
 }
 
-// Определяем интерфейс для состояния хранилища
 interface AuthState {
   user: User | null
+  token: string | null
   isAuthenticated: boolean
-  loading: boolean
 }
 
 export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
     user: null,
-    isAuthenticated: false,
-    loading: false
+    token: null,
+    isAuthenticated: false
   }),
 
   getters: {
-    // Получаем информацию о текущем пользователе
-    currentUser: (state) => state.user,
-    
-    // Проверяем статус аутентификации
-    isLoggedIn: (state) => state.isAuthenticated
+    getUser: (state) => state.user,
+    getToken: (state) => state.token,
+    getIsAuthenticated: (state) => state.isAuthenticated
   },
 
   actions: {
-    // Установка пользователя
+    // Установка данных пользователя
     setUser(user: User | null) {
       this.user = user
       this.isAuthenticated = !!user
     },
 
-    // Выход из системы
-    async logout() {
-      try {
-        this.loading = true
-        // Здесь будет логика выхода из системы
-        this.setUser(null)
-      } catch (error) {
-        console.error('Logout error:', error)
-        throw error
-      } finally {
-        this.loading = false
-      }
+    // Установка токена
+    setToken(token: string | null) {
+      this.token = token
     },
 
-    // Проверка аутентификации
-    async checkAuth() {
-      try {
-        this.loading = true
-        // Здесь будет логика проверки аутентификации
-        // const response = await $fetch('/api/auth/check')
-        // this.setUser(response.user)
-      } catch (error) {
-        console.error('Auth check error:', error)
-        this.setUser(null)
-      } finally {
-        this.loading = false
-      }
+    // Выход из системы
+    logout() {
+      this.user = null
+      this.token = null
+      this.isAuthenticated = false
     }
+  },
+
+  persist: {
+    storage: persistedState.localStorage
   }
 }) 
