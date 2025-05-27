@@ -1,4 +1,4 @@
-import { UseFetchOptions } from 'nuxt/app'
+import type { UseFetchOptions } from 'nuxt/app'
 
 interface ApiOptions extends UseFetchOptions<any> {
   // Дополнительные опции для API запросов

@@ -17,7 +17,20 @@ export default defineNuxtConfig({
   colorMode: {
     preference: 'system',
     fallback: 'light',
-    classSuffix: ''
+    classSuffix: '',
+    storageKey: 'nuxt-color-mode',
+    globalName: '__NUXT_COLOR_MODE__',
+    componentName: 'ColorScheme',
+    classPrefix: '',
+    dataValue: 'theme',
+    forced: false
+  },
+  ui: {
+    global: true,
+    icons: ['heroicons', 'simple-icons'],
+    notifications: {
+      position: 'top-right'
+    }
   },
   app: {
     head: {

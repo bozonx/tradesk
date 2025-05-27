@@ -1,6 +1,7 @@
 import type { Config } from 'tailwindcss'
 
 export default {
+  darkMode: 'class',
   content: [
     './components/**/*.{js,vue,ts}',
     './layouts/**/*.vue',
@@ -38,12 +39,18 @@ export default {
           800: '#1f2937',
           900: '#111827',
           950: '#030712'
+        },
+        dark: {
+          DEFAULT: '#1a1a1a',
+          'text-primary': '#ffffff',
+          'text-secondary': '#a0aec0',
+          'bg-primary': '#1a1a1a',
+          'bg-secondary': '#2d3748'
         }
       }
     }
   },
   plugins: [],
-  darkMode: 'class',
   safelist: [
     'dark'
   ]
